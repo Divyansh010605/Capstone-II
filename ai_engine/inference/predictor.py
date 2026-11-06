@@ -27,9 +27,16 @@ class StockPredictorEngine:
         device: str = "cpu",
     ):
         self.lookback_window = lookback_window
-        self.models_dir = models_dir
+        # Resolve models_dir to an absolute path anchored at this file's location,
+        # so it is CWD-independent regardless of how uvicorn / Docker launches the app.
+        _this_dir = os.path.dirname(os.path.abspath(__file__))
+        _repo_root = os.path.abspath(os.path.join(_this_dir, "..", ".."))
+        self.models_dir = (
+            models_dir if os.path.isabs(models_dir)
+            else os.path.join(_repo_root, models_dir)
+        )
         self.device = device
-        os.makedirs(models_dir, exist_ok=True)
+        os.makedirs(self.models_dir, exist_ok=True)
 
     def classify_trend(self, current_price: float, predicted_final_price: float) -> Dict[str, Any]:
         """
@@ -160,8 +167,20 @@ class StockPredictorEngine:
         ensemble.calibrate_confidence_intervals(y_val_true_prices, val_preds_prices)
 
         # 5. Inference for Future Horizon (Using the most recent window)
-        latest_features, _ = pipeline.transform(featured_df.iloc[-self.lookback_window :])
-        X_latest = np.expand_dims(latest_features, axis=0)  # (1, lookback, features)
+        # We need enough rows so that after transform we can extract exactly one
+        # lookback_window-length window.  `pipeline.transform` scales row-by-row
+        # (MinMaxScaler) without windowing, so we scale the last `lookback_window`
+        # rows and reshape them into a single (1, lookback_window, num_features) batch.
+        tail_df = featured_df.iloc[-self.lookback_window:]
+        if len(tail_df) < self.lookback_window:
+            raise ValueError(
+                f"Not enough rows for inference window: need {self.lookback_window}, "
+                f"got {len(tail_df)} after feature engineering."
+            )
+        latest_features, _ = pipeline.transform(tail_df)
+        # latest_features shape: (lookback_window, num_features)
+        # Wrap in batch dimension → (1, lookback_window, num_features)
+        X_latest = latest_features[np.newaxis, :, :]  # explicit, avoids expand_dims ambiguity
 
         future_predictions_by_model = {}
         for model_name, trainer in trainers.items():

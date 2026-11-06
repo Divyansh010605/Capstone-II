@@ -95,10 +95,13 @@ class RiskAnalysisService:
 
             # D. Conditional VaR (CVaR / Expected Shortfall)
             tail_returns = daily_returns[daily_returns <= -hist_var]
-            if len(tail_returns) > 0:
+            if len(tail_returns) > 0 and not np.isnan(tail_returns.mean()):
                 cvar_val = -float(tail_returns.mean())
             else:
-                cvar_val = hist_var * 1.25
+                cvar_val = hist_var * 1.25 if hist_var > 0 else 0.0
+
+            if np.isnan(cvar_val):
+                cvar_val = 0.0
 
             cvar_metrics[cl_key] = {
                 "cvar_pct": round(cvar_val * 100.0, 3),
@@ -206,7 +209,17 @@ class RiskAnalysisService:
 
         # Portfolio VaR 95%
         port_var_95 = float(-np.percentile(portfolio_daily_return, 5.0) * 100.0)
-        port_cvar_95 = float(-portfolio_daily_return[portfolio_daily_return <= -port_var_95 / 100.0].mean() * 100.0)
+        if np.isnan(port_var_95):
+            port_var_95 = 0.0
+
+        tail_returns = portfolio_daily_return[portfolio_daily_return <= -port_var_95 / 100.0]
+        if len(tail_returns) > 0 and not np.isnan(tail_returns.mean()):
+            port_cvar_95 = float(-tail_returns.mean() * 100.0)
+        else:
+            port_cvar_95 = port_var_95 * 1.25 if port_var_95 > 0 else 0.0
+
+        if np.isnan(port_cvar_95):
+            port_cvar_95 = 0.0
 
         # Risk Category
         vol_pct = portfolio_volatility * 100.0

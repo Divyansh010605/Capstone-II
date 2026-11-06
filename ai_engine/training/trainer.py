@@ -98,7 +98,11 @@ class ModelTrainer:
                     break
 
         if save_path and os.path.exists(save_path):
-            self.model.load_state_dict(torch.load(save_path, map_location=self.device))
+            try:
+                state_dict = torch.load(save_path, map_location=self.device, weights_only=True)
+            except TypeError:
+                state_dict = torch.load(save_path, map_location=self.device)
+            self.model.load_state_dict(state_dict)
 
         return history
 
