@@ -7,18 +7,24 @@ and generates stock-specific sentiment breakdown, scores, and bullish/bearish in
 from typing import Dict, Any, List
 from datetime import datetime, timezone
 import re
-import yfinance as yf
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-import nltk
-
-# Ensure vader lexicon is available
 try:
-    nltk.data.find("sentiment/vader_lexicon.zip")
-except LookupError:
+    import yfinance as yf
+except ImportError:
+    yf = None
+
+try:
+    import nltk
+    from nltk.sentiment.vader import SentimentIntensityAnalyzer
     try:
-        nltk.download("vader_lexicon", quiet=True)
-    except Exception:
-        pass
+        nltk.data.find("sentiment/vader_lexicon.zip")
+    except LookupError:
+        try:
+            nltk.download("vader_lexicon", quiet=True)
+        except Exception:
+            pass
+except Exception:
+    SentimentIntensityAnalyzer = None
+    nltk = None
 
 
 class SentimentAnalysisService:

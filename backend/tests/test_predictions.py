@@ -2,7 +2,12 @@
 AI Engine & Prediction Endpoint Tests.
 """
 
-from fastapi import status
+try:
+    from fastapi import status
+except ImportError:
+    class _Status:
+        HTTP_200_OK = 200
+    status = _Status()
 import numpy as np
 import pandas as pd
 from ai_engine.features.technical_indicators import compute_technical_indicators

@@ -2,6 +2,8 @@
 PyTorch Gated Recurrent Unit (GRU) for Time Series Forecasting.
 """
 
+import os
+from typing import Optional
 import torch
 import torch.nn as nn
 
@@ -36,10 +38,57 @@ class GRUForecaster(nn.Module):
         self.fc2 = nn.Linear(32, output_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x shape: (batch_size, seq_len, input_size)
+        # Accept 2D (seq_len, input_size) or 3D (batch_size, seq_len, input_size)
+        if not isinstance(x, torch.Tensor):
+            x = torch.as_tensor(x, dtype=torch.float32)
+        else:
+            x = x.float()
+
+        is_2d = (x.dim() == 2)
+        if is_2d:
+            x = x.unsqueeze(0)
+
         out, hn = self.gru(x)
         last_step = out[:, -1, :]
         normed = self.layer_norm(last_step)
         fc1_out = self.dropout(self.gelu(self.fc1(normed)))
         prediction = self.fc2(fc1_out)
+
+        if is_2d:
+            return prediction.squeeze(0)
         return prediction
+
+    def load_weights(self, filepath: str, map_location: str = "cpu") -> bool:
+        """Safely load model weights from checkpoint file."""
+        if not os.path.exists(filepath):
+            return False
+        try:
+            try:
+                state_dict = torch.load(filepath, map_location=map_location, weights_only=True)
+            except Exception:
+                state_dict = torch.load(filepath, map_location=map_location, weights_only=False)
+
+            if isinstance(state_dict, dict):
+                if "state_dict" in state_dict:
+                    state_dict = state_dict["state_dict"]
+                elif "model_state_dict" in state_dict:
+                    state_dict = state_dict["model_state_dict"]
+
+            model_sd = self.state_dict()
+            cleaned = {}
+            for k, v in state_dict.items():
+                k_clean = k[7:] if k.startswith("module.") else k
+                if k_clean in model_sd and model_sd[k_clean].shape == v.shape:
+                    cleaned[k_clean] = v
+
+            if len(cleaned) == len(model_sd):
+                self.load_state_dict(cleaned, strict=True)
+                return True
+            elif len(cleaned) > 0:
+                model_sd.update(cleaned)
+                self.load_state_dict(model_sd, strict=False)
+                return True
+            return False
+        except Exception:
+            return False
+

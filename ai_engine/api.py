@@ -9,7 +9,10 @@ from typing import Dict, Any, List
 import pandas as pd
 from ai_engine.inference.predictor import StockPredictorEngine
 from ai_engine.features.technical_indicators import compute_technical_indicators
-import yfinance as yf
+try:
+    import yfinance as yf
+except ImportError:
+    yf = None
 
 app = FastAPI(title="AI Model Inference Microservice", version="2.0.0")
 predictor = StockPredictorEngine(lookback_window=60)
@@ -30,10 +33,20 @@ def health():
 def predict_endpoint(req: PredictRequest):
     sym = req.symbol.upper()
     try:
-        ticker = yf.Ticker(sym)
-        df = ticker.history(period="2y")
-        if df.empty or len(df) < 80:
-            raise ValueError(f"Insufficient historical data for {sym}")
+        df = None
+        if yf is not None:
+            try:
+                ticker = yf.Ticker(sym)
+                df = ticker.history(period="2y")
+                if df is not None and isinstance(df.columns, pd.MultiIndex):
+                    df.columns = [c[0] if isinstance(c, tuple) else c for c in df.columns]
+            except Exception:
+                df = None
+
+        if df is None or df.empty or len(df) < 50:
+            from backend.app.services.market_data import MarketDataService
+            ms = MarketDataService()
+            df = ms.fetch_historical_ohlcv(sym, period="2y")
 
         result = predictor.generate_predictions(
             symbol=sym,

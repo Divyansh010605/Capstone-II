@@ -445,7 +445,7 @@ export const apiClient = {
   async getPredictions(symbol, horizon = 7, model = 'ensemble') {
     try {
       const res = await fetch(`${API_BASE}/predictions/${symbol}?horizon=${horizon}&model=${model}`, {
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(20000),
       });
       if (res.ok) {
         this.isBackendConnected = true;

@@ -8,7 +8,11 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta, timezone
 import pandas as pd
 import numpy as np
-import yfinance as yf
+
+try:
+    import yfinance as yf
+except ImportError:
+    yf = None
 
 from ai_engine.features.technical_indicators import compute_technical_indicators
 
@@ -40,9 +44,11 @@ class MarketDataService:
     def fetch_stock_info(self, symbol: str) -> Dict[str, Any]:
         """Fetch general stock profile and latest metrics."""
         symbol = symbol.upper()
-        ticker = yf.Ticker(symbol)
 
         try:
+            if yf is None:
+                raise ImportError("yfinance not installed")
+            ticker = yf.Ticker(symbol)
             info = ticker.info or {}
             current_price = (
                 info.get("currentPrice")
@@ -67,20 +73,20 @@ class MarketDataService:
                 "last_updated": datetime.now(timezone.utc).isoformat(),
             }
             return result
-        except Exception as e:
-            # Fallback metadata if live call is choked
+        except Exception:
+            # Fallback metadata if live call is choked or yfinance is unavailable
             return {
                 "symbol": symbol,
                 "name": f"{symbol} Asset",
                 "sector": "Equities",
                 "industry": "Market Asset",
                 "currency": "USD",
-                "current_price": 100.0,
-                "previous_close": 99.5,
+                "current_price": 150.0,
+                "previous_close": 149.5,
                 "market_cap": 1000000000,
                 "pe_ratio": 20.0,
-                "fifty_two_week_high": 120.0,
-                "fifty_two_week_low": 80.0,
+                "fifty_two_week_high": 180.0,
+                "fifty_two_week_low": 120.0,
                 "summary": f"Market analysis tracking for {symbol}",
                 "last_updated": datetime.now(timezone.utc).isoformat(),
             }
@@ -107,17 +113,28 @@ class MarketDataService:
                 return entry["data"].copy()
 
         # 2. Fetch from yfinance
-        try:
-            ticker = yf.Ticker(symbol)
-            df = ticker.history(period=period, interval=interval)
+        df = None
+        if yf is not None:
+            try:
+                ticker = yf.Ticker(symbol)
+                df = ticker.history(period=period, interval=interval)
+                if df is not None and not df.empty:
+                    # Flatten MultiIndex columns if present
+                    if isinstance(df.columns, pd.MultiIndex):
+                        df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
+            except Exception:
+                df = None
 
-            if df.empty or len(df) < 5:
-                # If yfinance returned empty or throttled, create realistic synthetic market series
-                df = self._generate_fallback_history(symbol, period)
-        except Exception:
+        if df is None or df.empty or len(df) < 5:
             df = self._generate_fallback_history(symbol, period)
 
-        # 3. Clean and standardize columns
+        # 3. Clean and standardize columns safely
+        for req_col in ["Open", "High", "Low", "Close"]:
+            if req_col not in df.columns:
+                df[req_col] = 100.0
+        if "Volume" not in df.columns:
+            df["Volume"] = 1000000
+
         df = df[["Open", "High", "Low", "Close", "Volume"]].copy()
         df = df.dropna(subset=["Close"])
         df["Open"] = df["Open"].fillna(df["Close"])
