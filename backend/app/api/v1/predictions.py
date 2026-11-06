@@ -12,6 +12,21 @@ from backend.app.core.database import get_database
 router = APIRouter(prefix="/predictions", tags=["AI Predictions"])
 
 
+@router.get("", tags=["AI Predictions"])
+@router.get("/", tags=["AI Predictions"])
+async def get_prediction_models_info():
+    """List available deep learning forecasting models and supported horizons."""
+    return {
+        "status": "operational",
+        "available_models": ["ensemble", "lstm", "gru", "transformer"],
+        "default_model": "ensemble",
+        "min_horizon_days": 1,
+        "max_horizon_days": 30,
+        "default_horizon_days": 7,
+        "calibrated_confidence_level": 0.95,
+    }
+
+
 @router.get("/{symbol}", response_model=PredictionResponse)
 @router.get("/{symbol}/", response_model=PredictionResponse)
 async def generate_stock_predictions(

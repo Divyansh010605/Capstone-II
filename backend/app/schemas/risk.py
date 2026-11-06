@@ -3,7 +3,7 @@ Pydantic Schemas for Financial Risk Metrics & Portfolio Risk.
 """
 
 from typing import Dict, List, Optional, Any, Union
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class VaRDetail(BaseModel):
@@ -37,7 +37,15 @@ class StockRiskResponse(BaseModel):
 
 class PortfolioHoldingWeight(BaseModel):
     symbol: str
-    weight: float = Field(..., ge=0.0, le=1.0)
+    weight: float = Field(..., ge=0.0)
+
+    @field_validator("weight")
+    @classmethod
+    def normalize_weight(cls, v: float) -> float:
+        # If passed as percentage (e.g. 25.0 instead of 0.25), normalize to decimal
+        if v > 1.0 and v <= 100.0:
+            return round(v / 100.0, 4)
+        return round(v, 4)
 
 
 class PortfolioRiskRequest(BaseModel):

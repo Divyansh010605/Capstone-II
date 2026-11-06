@@ -11,6 +11,19 @@ from backend.app.core.database import get_database
 router = APIRouter(prefix="/sentiment", tags=["Market Sentiment"])
 
 
+@router.get("", tags=["Market Sentiment"])
+@router.get("/", tags=["Market Sentiment"])
+async def get_sentiment_service_info():
+    """Overview of NLP financial news sentiment analysis capabilities."""
+    return {
+        "status": "operational",
+        "analyzer": "NLTK VADER with Financial Lexicon Augmentation",
+        "sentiment_classes": ["Positive", "Neutral", "Negative"],
+        "sentiment_index_range": "0 to 100",
+        "lexicon_domain": "Equities & Financial Markets",
+    }
+
+
 @router.get("/{symbol}", response_model=SentimentResponse)
 @router.get("/{symbol}/", response_model=SentimentResponse)
 async def get_market_sentiment(symbol: str, db=Depends(get_database)):

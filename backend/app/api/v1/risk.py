@@ -12,6 +12,26 @@ from backend.app.core.database import get_database
 router = APIRouter(prefix="/risk", tags=["Financial Risk Analysis"])
 
 
+@router.get("", tags=["Financial Risk Analysis"])
+@router.get("/", tags=["Financial Risk Analysis"])
+async def get_risk_service_info():
+    """Overview of quantitative risk models and methodology."""
+    return {
+        "status": "operational",
+        "methodologies": [
+            "Parametric Value-at-Risk (Delta-Normal)",
+            "Historical Value-at-Risk",
+            "Monte Carlo Simulation (10,000 paths GBM)",
+            "Conditional Value-at-Risk (CVaR / Expected Shortfall)",
+            "Maximum Peak-to-Trough Drawdown",
+            "Annualized Sharpe & Sortino Ratios",
+            "Multi-Asset Covariance & Diversification Benefit",
+        ],
+        "risk_free_rate_pct": 4.0,
+        "confidence_levels": ["95%", "99%"],
+    }
+
+
 @router.post("/portfolio", response_model=PortfolioRiskResponse)
 @router.post("/portfolio/", response_model=PortfolioRiskResponse)
 async def evaluate_portfolio_risk(request: PortfolioRiskRequest):
