@@ -4,11 +4,12 @@ Pydantic Schemas for Virtual Portfolios and Watchlists.
 
 from typing import List, Optional, Any
 from pydantic import BaseModel, Field
+from backend.app.schemas.risk import PortfolioRiskResponse
 
 
 class PositionEnriched(BaseModel):
     symbol: str
-    name: str
+    name: Optional[str] = ""
     quantity: int
     avg_buy_price: float
     current_price: float
@@ -50,7 +51,7 @@ class PortfolioResponse(BaseModel):
     total_return_pct: float
     positions: List[PositionEnriched]
     allocations: List[AssetAllocation]
-    portfolio_risk: Optional[Any] = None
+    portfolio_risk: Optional[PortfolioRiskResponse] = None
     last_updated: str
 
 

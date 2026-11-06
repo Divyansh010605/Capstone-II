@@ -13,6 +13,7 @@ router = APIRouter(prefix="/watchlist", tags=["Watchlist"])
 
 
 @router.get("", response_model=List[StockInfo])
+@router.get("/", response_model=List[StockInfo])
 async def get_user_watchlist(current_user: dict = Depends(get_current_user)):
     """Retrieve all symbols currently on the user's watchlist with current price details."""
     user_id = str(current_user["id"])
@@ -21,6 +22,7 @@ async def get_user_watchlist(current_user: dict = Depends(get_current_user)):
 
 
 @router.post("", response_model=List[str])
+@router.post("/", response_model=List[str])
 async def add_stock_to_watchlist(
     action: WatchlistActionRequest,
     current_user: dict = Depends(get_current_user),
@@ -43,6 +45,7 @@ async def add_stock_to_watchlist(
 
 
 @router.delete("/{symbol}", response_model=List[str])
+@router.delete("/{symbol}/", response_model=List[str])
 async def remove_stock_from_watchlist(
     symbol: str,
     current_user: dict = Depends(get_current_user),

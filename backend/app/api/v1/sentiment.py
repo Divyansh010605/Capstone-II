@@ -2,7 +2,7 @@
 Market Sentiment Analysis Endpoints: Financial News NLP & Sentiment Index.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 from backend.app.schemas.sentiment import SentimentResponse
 from backend.app.api.deps import sentiment_service
@@ -12,6 +12,7 @@ router = APIRouter(prefix="/sentiment", tags=["Market Sentiment"])
 
 
 @router.get("/{symbol}", response_model=SentimentResponse)
+@router.get("/{symbol}/", response_model=SentimentResponse)
 async def get_market_sentiment(symbol: str, db=Depends(get_database)):
     """
     Fetch and analyze real-time financial news sentiment for a stock symbol.
@@ -30,7 +31,7 @@ async def get_market_sentiment(symbol: str, db=Depends(get_database)):
                     "overall_sentiment": sentiment_data["overall_sentiment"],
                     "sentiment_score": sentiment_data["sentiment_score"],
                     "sentiment_index_100": sentiment_data["sentiment_index_100"],
-                    "analyzed_at": datetime.utcnow().isoformat(),
+                    "analyzed_at": datetime.now(timezone.utc).isoformat(),
                 }
             )
 

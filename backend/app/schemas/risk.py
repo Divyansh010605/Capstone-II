@@ -2,7 +2,7 @@
 Pydantic Schemas for Financial Risk Metrics & Portfolio Risk.
 """
 
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 from pydantic import BaseModel, Field
 
 
@@ -21,7 +21,7 @@ class CVaRDetail(BaseModel):
 class StockRiskResponse(BaseModel):
     symbol: str
     risk_category: str  # Low Risk, Medium Risk, High Risk
-    risk_score: int  # 0 to 100
+    risk_score: Union[int, float]  # 0 to 100
     risk_description: str
     annualized_volatility_pct: float
     annualized_return_pct: float

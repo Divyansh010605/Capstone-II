@@ -2,7 +2,7 @@
 Authentication Endpoints: Register, Login, Current User Profile.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 import uuid
 from fastapi import APIRouter, HTTPException, status, Depends, Request
@@ -16,6 +16,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/register/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def register(user_in: UserCreate, db=Depends(get_database)):
     """Register a new user account."""
     # Check if user already exists in DB
@@ -44,7 +45,7 @@ async def register(user_in: UserCreate, db=Depends(get_database)):
         "hashed_password": hashed_pwd,
         "full_name": user_in.full_name or user_in.username,
         "is_active": True,
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
     if db is not None:
@@ -56,6 +57,7 @@ async def register(user_in: UserCreate, db=Depends(get_database)):
 
 
 @router.post("/login", response_model=TokenResponse)
+@router.post("/login/", response_model=TokenResponse)
 async def login(
     request: Request,
     db=Depends(get_database),
@@ -78,7 +80,7 @@ async def login(
     else:
         try:
             form = await request.form()
-            username = form.get("username")
+            username = form.get("username") or form.get("username_or_email")
             password = form.get("password")
         except Exception:
             pass
@@ -124,12 +126,13 @@ async def login(
             username=matched_user["username"],
             full_name=matched_user.get("full_name"),
             is_active=matched_user.get("is_active", True),
-            created_at=matched_user.get("created_at", datetime.utcnow().isoformat()),
+            created_at=matched_user.get("created_at", datetime.now(timezone.utc).isoformat()),
         ),
     )
 
 
 @router.get("/me", response_model=UserOut)
+@router.get("/me/", response_model=UserOut)
 async def get_current_user_profile(current_user: dict = Depends(get_current_user)):
     """Return the profile of the authenticated user."""
     return UserOut(
@@ -138,5 +141,5 @@ async def get_current_user_profile(current_user: dict = Depends(get_current_user
         username=current_user["username"],
         full_name=current_user.get("full_name"),
         is_active=current_user.get("is_active", True),
-        created_at=current_user.get("created_at", datetime.utcnow().isoformat()),
+        created_at=current_user.get("created_at", datetime.now(timezone.utc).isoformat()),
     )

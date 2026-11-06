@@ -12,6 +12,7 @@ router = APIRouter(prefix="/stocks", tags=["Stocks"])
 
 
 @router.get("", response_model=List[StockBase])
+@router.get("/", response_model=List[StockBase])
 async def list_stocks():
     """List available and tracked market stocks."""
     stocks = market_service.get_available_stocks()
@@ -19,6 +20,7 @@ async def list_stocks():
 
 
 @router.get("/{symbol}", response_model=StockInfo)
+@router.get("/{symbol}/", response_model=StockInfo)
 async def get_stock_details(symbol: str, db=Depends(get_database)):
     """Retrieve detailed real-time market profile and financial indicators for a symbol."""
     sym = symbol.upper().strip()

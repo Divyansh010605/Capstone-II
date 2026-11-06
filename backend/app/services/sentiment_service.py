@@ -5,7 +5,7 @@ and generates stock-specific sentiment breakdown, scores, and bullish/bearish in
 """
 
 from typing import Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 import yfinance as yf
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
@@ -113,25 +113,25 @@ class SentimentAnalysisService:
                     "title": f"{symbol} Reports Quarterly Earnings and Revenue Growth in Cloud & Core Operations",
                     "publisher": "Financial Times",
                     "link": f"https://finance.yahoo.com/quote/{symbol}",
-                    "providerPublishTime": int(datetime.utcnow().timestamp()) - 3600,
+                    "providerPublishTime": int(datetime.now(timezone.utc).timestamp()) - 3600,
                 },
                 {
                     "title": f"Market Analysts Reiterate Buy Rating for {symbol} Citing Strong Strategic Positioning",
                     "publisher": "Bloomberg News",
                     "link": f"https://finance.yahoo.com/quote/{symbol}",
-                    "providerPublishTime": int(datetime.utcnow().timestamp()) - 7200,
+                    "providerPublishTime": int(datetime.now(timezone.utc).timestamp()) - 7200,
                 },
                 {
                     "title": f"Macro Volatility and Treasury Yield Shifts Impact Large-Cap Valuation Multiples for {symbol}",
                     "publisher": "Wall Street Journal",
                     "link": f"https://finance.yahoo.com/quote/{symbol}",
-                    "providerPublishTime": int(datetime.utcnow().timestamp()) - 14400,
+                    "providerPublishTime": int(datetime.now(timezone.utc).timestamp()) - 14400,
                 },
                 {
                     "title": f"Tech Sector Innovation and Product Expansions Keep {symbol} at Front of Institutional Inflows",
                     "publisher": "Reuters",
                     "link": f"https://finance.yahoo.com/quote/{symbol}",
-                    "providerPublishTime": int(datetime.utcnow().timestamp()) - 28800,
+                    "providerPublishTime": int(datetime.now(timezone.utc).timestamp()) - 28800,
                 },
             ]
 
@@ -144,9 +144,9 @@ class SentimentAnalysisService:
             link = item.get("link", f"https://finance.yahoo.com/quote/{symbol}")
             pub_time = item.get("providerPublishTime")
             if pub_time:
-                date_str = datetime.utcfromtimestamp(pub_time).strftime("%Y-%m-%d %H:%M")
+                date_str = datetime.fromtimestamp(pub_time, tz=timezone.utc).strftime("%Y-%m-%d %H:%M")
             else:
-                date_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+                date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
             sent_res = self.analyze_text(title)
             sentiment_label = sent_res["classification"]
@@ -201,5 +201,5 @@ class SentimentAnalysisService:
                 "total_articles": n_articles,
             },
             "articles": articles_data[:10],
-            "analyzed_at": datetime.utcnow().isoformat(),
+            "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }

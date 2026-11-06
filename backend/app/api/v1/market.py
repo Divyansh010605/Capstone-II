@@ -12,6 +12,7 @@ router = APIRouter(prefix="/market", tags=["Market Data"])
 
 
 @router.get("/history/{symbol}", response_model=HistoricalDataResponse)
+@router.get("/history/{symbol}/", response_model=HistoricalDataResponse)
 async def get_historical_market_data(
     symbol: str,
     period: str = Query("1y", description="Time horizon: 1mo, 3mo, 6mo, 1y, 2y, 5y"),

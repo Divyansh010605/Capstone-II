@@ -5,7 +5,7 @@ and integrates with RiskAnalysisService for portfolio-level multi-asset risk.
 """
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 import pandas as pd
 
@@ -29,7 +29,7 @@ class PortfolioService:
             "description": "High-conviction balanced technology and large-cap equity portfolio.",
             "cash": 25000.0,
             "initial_capital": 100000.0,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "positions": [
                 {"symbol": "AAPL", "quantity": 150, "avg_buy_price": 175.50},
                 {"symbol": "MSFT", "quantity": 100, "avg_buy_price": 380.20},
@@ -49,7 +49,7 @@ class PortfolioService:
             "description": description,
             "cash": float(initial_capital),
             "initial_capital": float(initial_capital),
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "positions": [],
         }
         self._portfolios[port_id] = portfolio
@@ -158,7 +158,7 @@ class PortfolioService:
             "positions": enriched_positions,
             "allocations": allocations,
             "portfolio_risk": portfolio_risk,
-            "last_updated": datetime.utcnow().isoformat(),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
         }
 
     def add_position(

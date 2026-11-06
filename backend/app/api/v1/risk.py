@@ -2,7 +2,7 @@
 Financial Risk Analysis Endpoints: Volatility, VaR, CVaR, Drawdown, Sharpe, Sortino.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Depends
 from backend.app.schemas.risk import StockRiskResponse, PortfolioRiskRequest, PortfolioRiskResponse
@@ -12,39 +12,8 @@ from backend.app.core.database import get_database
 router = APIRouter(prefix="/risk", tags=["Financial Risk Analysis"])
 
 
-@router.get("/{symbol}", response_model=StockRiskResponse)
-async def get_stock_risk_metrics(symbol: str, db=Depends(get_database)):
-    """
-    Calculate comprehensive quantitative financial risk metrics for a stock.
-    Computes Volatility, Parametric/Historical/Monte Carlo VaR, CVaR,
-    Maximum Drawdown, Sharpe & Sortino ratios, and categorizes into Low/Medium/High Risk.
-    """
-    sym = symbol.upper().strip()
-    try:
-        df_hist = market_service.fetch_historical_ohlcv(sym, period="1y", interval="1d")
-        risk_data = risk_service.calculate_stock_risk(sym, df_hist["Close"])
-
-        # Persist to MongoDB risk_metrics collection
-        if db is not None:
-            await db.risk_metrics.insert_one(
-                {
-                    "symbol": sym,
-                    "risk_category": risk_data["risk_category"],
-                    "annualized_volatility_pct": risk_data["annualized_volatility_pct"],
-                    "sharpe_ratio": risk_data["sharpe_ratio"],
-                    "maximum_drawdown_pct": risk_data["maximum_drawdown_pct"],
-                    "calculated_at": datetime.utcnow().isoformat(),
-                }
-            )
-
-        return StockRiskResponse(**risk_data)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Risk calculation error for {sym}: {str(e)}"
-        )
-
-
 @router.post("/portfolio", response_model=PortfolioRiskResponse)
+@router.post("/portfolio/", response_model=PortfolioRiskResponse)
 async def evaluate_portfolio_risk(request: PortfolioRiskRequest):
     """
     Calculate multi-asset portfolio risk, volatility, diversification benefit,
@@ -68,4 +37,37 @@ async def evaluate_portfolio_risk(request: PortfolioRiskRequest):
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to calculate portfolio risk: {str(e)}"
+        )
+
+
+@router.get("/{symbol}", response_model=StockRiskResponse)
+@router.get("/{symbol}/", response_model=StockRiskResponse)
+async def get_stock_risk_metrics(symbol: str, db=Depends(get_database)):
+    """
+    Calculate comprehensive quantitative financial risk metrics for a stock.
+    Computes Volatility, Parametric/Historical/Monte Carlo VaR, CVaR,
+    Maximum Drawdown, Sharpe & Sortino ratios, and categorizes into Low/Medium/High Risk.
+    """
+    sym = symbol.upper().strip()
+    try:
+        df_hist = market_service.fetch_historical_ohlcv(sym, period="1y", interval="1d")
+        risk_data = risk_service.calculate_stock_risk(sym, df_hist["Close"])
+
+        # Persist to MongoDB risk_metrics collection
+        if db is not None:
+            await db.risk_metrics.insert_one(
+                {
+                    "symbol": sym,
+                    "risk_category": risk_data["risk_category"],
+                    "annualized_volatility_pct": risk_data["annualized_volatility_pct"],
+                    "sharpe_ratio": risk_data["sharpe_ratio"],
+                    "maximum_drawdown_pct": risk_data["maximum_drawdown_pct"],
+                    "calculated_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+
+        return StockRiskResponse(**risk_data)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Risk calculation error for {sym}: {str(e)}"
         )

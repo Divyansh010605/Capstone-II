@@ -2,7 +2,7 @@
 Pydantic Schemas for Stocks & Historical Market OHLCV Data.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic import BaseModel
 
 
@@ -31,7 +31,7 @@ class OHLCVRecord(BaseModel):
     high: float
     low: float
     close: float
-    volume: int
+    volume: Union[int, float]
     sma_20: Optional[float] = None
     sma_50: Optional[float] = None
     ema_12: Optional[float] = None

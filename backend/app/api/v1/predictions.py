@@ -3,7 +3,7 @@ AI Predictions Endpoints: Deep Learning Forecasts (LSTM, GRU, Transformer, Ensem
 Computes calibrated confidence intervals, trend classification, and backtest evaluation metrics.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query, Depends
 from backend.app.schemas.prediction import PredictionResponse
 from backend.app.api.deps import market_service, prediction_engine
@@ -13,6 +13,7 @@ router = APIRouter(prefix="/predictions", tags=["AI Predictions"])
 
 
 @router.get("/{symbol}", response_model=PredictionResponse)
+@router.get("/{symbol}/", response_model=PredictionResponse)
 async def generate_stock_predictions(
     symbol: str,
     horizon: int = Query(7, ge=1, le=30, description="Forecast horizon in days (1-30)"),
@@ -45,7 +46,7 @@ async def generate_stock_predictions(
                 "trend": result["trend"],
                 "predicted_final_price": result["predicted_final_price"],
                 "evaluation_metrics": result["evaluation_metrics"],
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
             }
             await db.predictions.insert_one(pred_record)
 

@@ -37,6 +37,10 @@ class DatabaseManager:
             await self.create_indexes()
         except Exception as e:
             self.is_connected = False
+            if self.client:
+                self.client.close()
+                self.client = None
+            self.db = None
             logger.warning(
                 f"MongoDB connection failed ({e}). Operating in memory/hybrid fallback mode."
             )
@@ -84,6 +88,7 @@ class DatabaseManager:
         """Close MongoDB connection client."""
         if self.client:
             self.client.close()
+            self.client = None
             self.is_connected = False
             logger.info("MongoDB connection closed.")
 

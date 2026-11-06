@@ -5,7 +5,7 @@ Stores records in MongoDB and computes technical indicators.
 """
 
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 import numpy as np
 import yfinance as yf
@@ -64,7 +64,7 @@ class MarketDataService:
                 "fifty_two_week_high": float(info.get("fiftyTwoWeekHigh") or (current_price * 1.15)),
                 "fifty_two_week_low": float(info.get("fiftyTwoWeekLow") or (current_price * 0.85)),
                 "summary": info.get("longBusinessSummary", f"Financial asset tracker for {symbol}"),
-                "last_updated": datetime.utcnow().isoformat(),
+                "last_updated": datetime.now(timezone.utc).isoformat(),
             }
             return result
         except Exception as e:
@@ -82,7 +82,7 @@ class MarketDataService:
                 "fifty_two_week_high": 120.0,
                 "fifty_two_week_low": 80.0,
                 "summary": f"Market analysis tracking for {symbol}",
-                "last_updated": datetime.utcnow().isoformat(),
+                "last_updated": datetime.now(timezone.utc).isoformat(),
             }
 
     def fetch_historical_ohlcv(
@@ -100,7 +100,7 @@ class MarketDataService:
         cache_key = f"{symbol}_{period}_{interval}"
 
         # 1. Check in-memory cache
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if not force_refresh and cache_key in self._memory_cache:
             entry = self._memory_cache[cache_key]
             if (now - entry["timestamp"]).total_seconds() < self._cache_ttl_seconds:
@@ -166,7 +166,7 @@ class MarketDataService:
         days_map = {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 252, "2y": 504, "5y": 1260}
         n_days = days_map.get(period, 252)
 
-        end_date = datetime.utcnow()
+        end_date = datetime.now(timezone.utc)
         start_date = end_date - timedelta(days=int(n_days * 1.5))
         dates = pd.bdate_range(start=start_date, periods=n_days)
 

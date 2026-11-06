@@ -15,7 +15,21 @@ from backend.app.core.database import get_database
 router = APIRouter(prefix="/portfolio", tags=["Portfolio Management"])
 
 
+@router.get("", response_model=PortfolioResponse)
+@router.get("/", response_model=PortfolioResponse)
+async def get_default_portfolio(
+    current_user: dict = Depends(get_current_user),
+):
+    """Retrieve default or primary portfolio for the current user."""
+    try:
+        summary = portfolio_service.get_portfolio_summary("default-demo-portfolio")
+        return PortfolioResponse(**summary)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("", response_model=PortfolioResponse)
+@router.post("/", response_model=PortfolioResponse)
 async def create_user_portfolio(
     port_in: PortfolioCreate,
     current_user: dict = Depends(get_current_user),
@@ -38,6 +52,7 @@ async def create_user_portfolio(
 
 
 @router.get("/{id}", response_model=PortfolioResponse)
+@router.get("/{id}/", response_model=PortfolioResponse)
 async def get_portfolio_details(
     id: str,
     current_user: dict = Depends(get_current_user),
@@ -53,6 +68,7 @@ async def get_portfolio_details(
 
 
 @router.post("/{id}/positions", response_model=PortfolioResponse)
+@router.post("/{id}/positions/", response_model=PortfolioResponse)
 async def add_stock_to_portfolio(
     id: str,
     action: PositionActionRequest,
@@ -74,6 +90,7 @@ async def add_stock_to_portfolio(
 
 
 @router.delete("/{id}/positions/{symbol}", response_model=PortfolioResponse)
+@router.delete("/{id}/positions/{symbol}/", response_model=PortfolioResponse)
 async def remove_stock_from_portfolio(
     id: str,
     symbol: str,

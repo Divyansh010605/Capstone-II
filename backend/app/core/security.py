@@ -2,7 +2,7 @@
 Security, Password Hashing & JWT Authentication Utilities.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Any, Union
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -31,10 +31,11 @@ def create_access_token(
     subject: Union[str, Any], expires_delta: Optional[timedelta] = None
 ) -> str:
     """Create a signed JWT access token."""
+    now_utc = datetime.now(timezone.utc)
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now_utc + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = now_utc + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
 

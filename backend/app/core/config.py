@@ -5,6 +5,30 @@ Loads configuration from environment variables with production defaults.
 
 import os
 from typing import List
+
+
+def _get_cors_origins() -> List[str]:
+    default_origins = [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8000",
+        "http://localhost:8080",
+        "http://127.0.0.1",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:8080",
+    ]
+    env_val = os.getenv("BACKEND_CORS_ORIGINS")
+    if not env_val:
+        return default_origins
+    if isinstance(env_val, str):
+        parts = [p.strip() for p in env_val.split(",") if p.strip()]
+        return parts if parts else default_origins
+    return default_origins
+
+
 from pydantic import BaseModel
 
 
@@ -29,14 +53,7 @@ class Settings(BaseModel):
     MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "stock_market_ai")
 
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = [
-        "http://localhost",
-        "http://localhost:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:8000",
-        "*",
-    ]
+    BACKEND_CORS_ORIGINS: List[str] = _get_cors_origins()
 
 
 settings = Settings()
