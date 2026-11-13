@@ -599,7 +599,7 @@ export const apiClient = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ symbol }),
       });
-      if (res.ok) return res.json();
+      if (res.ok) return await this.getWatchlist();
     } catch {
       // fallback
     }
@@ -618,7 +618,7 @@ export const apiClient = {
   async removeFromWatchlist(symbol) {
     try {
       const res = await fetch(`${API_BASE}/watchlist/${symbol}`, { method: 'DELETE' });
-      if (res.ok) return res.json();
+      if (res.ok) return await this.getWatchlist();
     } catch {
       // fallback
     }

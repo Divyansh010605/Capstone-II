@@ -20,11 +20,31 @@ class DatabaseManager:
     async def connect(self):
         """Initialize connection to MongoDB and ensure indexes."""
         try:
+            import socket
+            from urllib.parse import urlparse
+            u = urlparse(settings.MONGODB_URI)
+            host = u.hostname or "127.0.0.1"
+            port = u.port or 27017
+
+            # Quick non-blocking socket probe to verify reachability
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.3)
+            check = sock.connect_ex((host, port))
+            sock.close()
+            if check != 0:
+                self.is_connected = False
+                self.client = None
+                self.db = None
+                logger.info(
+                    f"MongoDB at {host}:{port} is not reachable (code={check}). Operating in memory/hybrid fallback mode."
+                )
+                return
+
             logger.info(f"Connecting to MongoDB at {settings.MONGODB_URI}...")
             self.client = AsyncIOMotorClient(
                 settings.MONGODB_URI,
-                serverSelectionTimeoutMS=2000,
-                connectTimeoutMS=2000,
+                serverSelectionTimeoutMS=1000,
+                connectTimeoutMS=1000,
             )
             self.db = self.client[settings.MONGODB_DB_NAME]
 
