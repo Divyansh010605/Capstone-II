@@ -48,11 +48,20 @@ pipeline {
                     script {
                         if (isUnix()) {
                             sh '''
+                                if [ ! -d "node_modules" ]; then
+                                    echo "Installing dependencies..."
+                                    npm install --prefer-offline --no-audit
+                                fi
                                 npm run build
                             '''
                         } else {
                             bat '''
                                 @echo off
+                                if not exist "node_modules" (
+                                    echo Installing frontend dependencies...
+                                    call npm install --prefer-offline --no-audit
+                                )
+                                echo Running Vite production build...
                                 call npm run build
                             '''
                         }
