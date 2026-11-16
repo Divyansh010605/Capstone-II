@@ -6,6 +6,20 @@ import os
 import sys
 from pathlib import Path
 import pytest
+import httpx
+
+# Compatibility patch for Starlette TestClient with httpx >= 0.28.0
+_orig_httpx_client_init = httpx.Client.__init__
+
+def _patched_httpx_client_init(self, *args, **kwargs):
+    if "app" in kwargs:
+        app = kwargs.pop("app")
+        if "transport" not in kwargs or kwargs["transport"] is None:
+            kwargs["transport"] = httpx.ASGITransport(app=app)
+    _orig_httpx_client_init(self, *args, **kwargs)
+
+httpx.Client.__init__ = _patched_httpx_client_init
+
 from fastapi.testclient import TestClient
 
 # Ensure root workspace is in sys.path
