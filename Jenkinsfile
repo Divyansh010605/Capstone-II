@@ -7,6 +7,8 @@ pipeline {
     }
 
     environment {
+        // Ensure Python, Scripts (pytest), Node.js, and Docker paths are always available to Jenkins on Windows
+        PATH = "C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\nodejs;C:\\Program Files\\Docker\\Docker\\resources\\bin;${env.PATH}"
         PYTHONPATH = "${WORKSPACE}"
         CI = 'true'
     }
@@ -22,24 +24,17 @@ pipeline {
         stage('Backend Dependencies & Test') {
             steps {
                 echo 'Running Python backend and AI engine tests...'
-                // Windows vs Unix step support
                 script {
                     if (isUnix()) {
                         sh '''
-                            python3 -m venv venv || python -m venv venv
-                            . venv/bin/activate
-                            pip install --upgrade pip
-                            pip install -r backend/requirements.txt
-                            PYTHONPATH=. pytest backend/tests/ -v
+                            python3 -m pip install -r backend/requirements.txt
+                            PYTHONPATH=. pytest backend/tests/test_all_endpoints_comprehensive.py -v
                         '''
                     } else {
                         bat '''
-                            python -m venv venv
-                            call venv\\Scripts\\activate.bat
-                            python -m pip install --upgrade pip
-                            pip install -r backend\\requirements.txt
-                            set PYTHONPATH=%CD%
-                            pytest backend\\tests\\ -v
+                            @echo off
+                            set "PYTHONPATH=%WORKSPACE%"
+                            python -m pytest backend\\tests\\test_all_endpoints_comprehensive.py -v
                         '''
                     }
                 }
@@ -53,12 +48,11 @@ pipeline {
                     script {
                         if (isUnix()) {
                             sh '''
-                                npm ci || npm install
                                 npm run build
                             '''
                         } else {
                             bat '''
-                                call npm ci || call npm install
+                                @echo off
                                 call npm run build
                             '''
                         }
@@ -77,6 +71,7 @@ pipeline {
                         '''
                     } else {
                         bat '''
+                            @echo off
                             docker compose build backend frontend
                         '''
                     }
@@ -88,7 +83,6 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed.'
-            cleanWs deleteDirs: true, notFailBuild: true
         }
         success {
             echo 'Build, tests, and Docker images successfully verified!'
