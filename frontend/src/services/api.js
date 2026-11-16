@@ -4,7 +4,11 @@
  * even if the backend is starting up or temporarily offline.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const RAW_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = RAW_API_URL.replace(/\/+$/, '').endsWith('/api/v1')
+  ? RAW_API_URL.replace(/\/+$/, '')
+  : `${RAW_API_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '')}/api/v1`;
+const BASE_ORIGIN = API_BASE.replace(/\/api\/v1\/?$/, '');
 
 // Comprehensive Fallback Mock Data
 const MOCK_STOCKS = [
@@ -311,10 +315,15 @@ let inMemoryWatchlist = [
 export const apiClient = {
   isBackendConnected: false,
 
+  getAuthHeaders(token) {
+    const t = token || (typeof localStorage !== 'undefined' ? localStorage.getItem('alpha_jwt_token') : null);
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  },
+
   // Check backend health
   async checkHealth() {
     try {
-      const res = await fetch(`${API_BASE.replace('/api/v1', '')}/health`, { signal: AbortSignal.timeout(1500) });
+      const res = await fetch(`${BASE_ORIGIN}/health`, { signal: AbortSignal.timeout(2000) });
       this.isBackendConnected = res.ok;
       return res.ok;
     } catch {
@@ -329,25 +338,34 @@ export const apiClient = {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username_or_email: username, password }),
+        body: JSON.stringify({
+          username_or_email: username,
+          username: username,
+          password: password,
+        }),
       });
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        return await res.json();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Incorrect username or password');
       }
-    } catch {
-      // fallback
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch') && !err.message.includes('Failed to fetch'))) {
+        throw err;
+      }
+      return {
+        access_token: 'mock-jwt-token-alpha-quant',
+        token_type: 'bearer',
+        user: {
+          id: 'demo-user-1',
+          username: username || 'demotrader',
+          email: `${username || 'demo'}@example.com`,
+          full_name: 'Demo Financial Analyst',
+        },
+      };
     }
-    return {
-      access_token: 'mock-jwt-token-alpha-quant',
-      token_type: 'bearer',
-      user: {
-        id: 'demo-user-1',
-        username: username || 'demotrader',
-        email: `${username || 'demo'}@example.com`,
-        full_name: 'Demo Financial Analyst',
-      },
-    };
   },
 
   async register(data) {
@@ -359,26 +377,31 @@ export const apiClient = {
       });
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        return await res.json();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || 'Registration failed');
       }
-    } catch {
-      // fallback
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch') && !err.message.includes('Failed to fetch'))) {
+        throw err;
+      }
+      return {
+        id: 'demo-user-new',
+        username: data.username,
+        email: data.email,
+        full_name: data.full_name || 'Trader',
+      };
     }
-    return {
-      id: 'demo-user-new',
-      username: data.username,
-      email: data.email,
-      full_name: data.full_name || 'Trader',
-    };
   },
 
   async getMe(token) {
     try {
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await fetch(`${API_BASE}/auth/me`, { headers });
+      const headers = this.getAuthHeaders(token);
+      const res = await fetch(`${API_BASE}/auth/me`, { headers, signal: AbortSignal.timeout(3000) });
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        return await res.json();
       }
     } catch {
       // fallback
@@ -394,10 +417,10 @@ export const apiClient = {
   // Stocks
   async getStocks() {
     try {
-      const res = await fetch(`${API_BASE}/stocks`, { signal: AbortSignal.timeout(2500) });
+      const res = await fetch(`${API_BASE}/stocks`, { signal: AbortSignal.timeout(3000) });
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        return await res.json();
       }
     } catch {
       // fallback
@@ -406,15 +429,16 @@ export const apiClient = {
   },
 
   async getStockInfo(symbol) {
+    const sym = encodeURIComponent((symbol || 'AAPL').toUpperCase().trim());
     try {
-      const res = await fetch(`${API_BASE}/stocks/${symbol}`);
-      if (res.ok) return res.json();
+      const res = await fetch(`${API_BASE}/stocks/${sym}`, { signal: AbortSignal.timeout(4000) });
+      if (res.ok) return await res.json();
     } catch {
       // fallback
     }
     return {
-      symbol,
-      name: `${symbol} Corp`,
+      symbol: (symbol || 'AAPL').toUpperCase(),
+      name: `${(symbol || 'AAPL').toUpperCase()} Corp`,
       current_price: 185.50,
       previous_close: 182.10,
       market_cap: 2850000000000,
@@ -427,43 +451,51 @@ export const apiClient = {
 
   // Market History
   async getMarketHistory(symbol, period = '1y', interval = '1d') {
+    const sym = encodeURIComponent((symbol || 'AAPL').toUpperCase().trim());
     try {
-      const res = await fetch(`${API_BASE}/market/history/${symbol}?period=${period}&interval=${interval}`, {
-        signal: AbortSignal.timeout(4000),
-      });
+      const res = await fetch(
+        `${API_BASE}/market/history/${sym}?period=${encodeURIComponent(period)}&interval=${encodeURIComponent(interval)}`,
+        { signal: AbortSignal.timeout(10000) }
+      );
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        return await res.json();
       }
     } catch {
       // fallback
     }
-    return generateMockHistory(symbol, period === '1mo' ? 22 : period === '3mo' ? 65 : 120);
+    const daysMap = { '1mo': 22, '3mo': 65, '6mo': 130, '1y': 252, '2y': 504, '5y': 1260 };
+    return generateMockHistory(symbol, daysMap[period] || 120);
   },
 
   // AI Predictions
   async getPredictions(symbol, horizon = 7, model = 'ensemble') {
+    const sym = encodeURIComponent((symbol || 'AAPL').toUpperCase().trim());
+    const validModel = (model || 'ensemble').toLowerCase();
+    const validHorizon = Math.max(1, Math.min(30, parseInt(horizon, 10) || 7));
     try {
-      const res = await fetch(`${API_BASE}/predictions/${symbol}?horizon=${horizon}&model=${model}`, {
-        signal: AbortSignal.timeout(20000),
-      });
+      const res = await fetch(
+        `${API_BASE}/predictions/${sym}?horizon=${validHorizon}&model=${encodeURIComponent(validModel)}`,
+        { signal: AbortSignal.timeout(30000) }
+      );
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        return await res.json();
       }
     } catch {
       // fallback
     }
-    return generateMockPrediction(symbol, horizon, model);
+    return generateMockPrediction(symbol, validHorizon, validModel);
   },
 
   // Financial Risk
   async getRiskMetrics(symbol) {
+    const sym = encodeURIComponent((symbol || 'AAPL').toUpperCase().trim());
     try {
-      const res = await fetch(`${API_BASE}/risk/${symbol}`, { signal: AbortSignal.timeout(3000) });
+      const res = await fetch(`${API_BASE}/risk/${sym}`, { signal: AbortSignal.timeout(8000) });
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        return await res.json();
       }
     } catch {
       // fallback
@@ -473,12 +505,18 @@ export const apiClient = {
 
   async calculatePortfolioRisk(holdings) {
     try {
+      const formattedHoldings = (holdings || []).map((h) => ({
+        symbol: (h.symbol || '').toUpperCase().trim(),
+        weight: typeof h.weight === 'number'
+          ? (h.weight > 1.0 ? h.weight / 100 : h.weight)
+          : (h.allocation_pct ? h.allocation_pct / 100 : 0.0),
+      }));
       const res = await fetch(`${API_BASE}/risk/portfolio`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ holdings }),
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeaders() },
+        body: JSON.stringify({ holdings: formattedHoldings }),
       });
-      if (res.ok) return res.json();
+      if (res.ok) return await res.json();
     } catch {
       // fallback
     }
@@ -486,12 +524,14 @@ export const apiClient = {
   },
 
   // Portfolio
-  async getPortfolio(id = 'default-demo-portfolio') {
+  async getPortfolio(id = 'default-demo-portfolio', token) {
     try {
-      const res = await fetch(`${API_BASE}/portfolio/${id}`, { signal: AbortSignal.timeout(2500) });
+      const headers = this.getAuthHeaders(token);
+      const url = id && id !== 'default-demo-portfolio' ? `${API_BASE}/portfolio/${id}` : `${API_BASE}/portfolio`;
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(5000) });
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        return await res.json();
       }
     } catch {
       // fallback
@@ -499,24 +539,61 @@ export const apiClient = {
     return mockPortfolio;
   },
 
-  async addPosition(id, symbol, quantity, buyPrice) {
+  async createPortfolio(data, token) {
     try {
-      const res = await fetch(`${API_BASE}/portfolio/${id}/positions`, {
+      const res = await fetch(`${API_BASE}/portfolio`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol, quantity, buy_price: buyPrice }),
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeaders(token) },
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description || '',
+          initial_capital: data.initial_capital ? parseFloat(data.initial_capital) : 100000.0,
+        }),
       });
-      if (res.ok) return res.json();
-    } catch {
-      // fallback
+      if (res.ok) return await res.json();
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to create portfolio');
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch'))) throw err;
+      return mockPortfolio;
+    }
+  },
+
+  async addPosition(id, symbol, quantity, buyPrice, token) {
+    const sym = (symbol || '').toUpperCase().trim();
+    const qty = parseInt(quantity, 10);
+    const price = (buyPrice !== null && buyPrice !== undefined && buyPrice !== '') ? parseFloat(buyPrice) : null;
+    const portId = id || 'default-demo-portfolio';
+
+    try {
+      const res = await fetch(`${API_BASE}/portfolio/${portId}/positions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeaders(token) },
+        body: JSON.stringify({
+          symbol: sym,
+          quantity: qty,
+          buy_price: price,
+        }),
+      });
+      if (res.ok) {
+        this.isBackendConnected = true;
+        return await res.json();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to add stock position');
+      }
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch'))) {
+        throw err;
+      }
     }
 
-    // In-memory update
-    const price = buyPrice || 180.0;
-    const existing = mockPortfolio.positions.find((p) => p.symbol === symbol);
+    // In-memory offline fallback update
+    const execPrice = price || 180.0;
+    const existing = mockPortfolio.positions.find((p) => p.symbol === sym);
     if (existing) {
-      const totalQty = existing.quantity + quantity;
-      existing.avg_buy_price = +((existing.avg_buy_price * existing.quantity + price * quantity) / totalQty).toFixed(2);
+      const totalQty = existing.quantity + qty;
+      existing.avg_buy_price = +((existing.avg_buy_price * existing.quantity + execPrice * qty) / totalQty).toFixed(2);
       existing.quantity = totalQty;
       existing.cost_basis = +(existing.avg_buy_price * totalQty).toFixed(2);
       existing.current_value = +(existing.current_price * totalQty).toFixed(2);
@@ -524,14 +601,14 @@ export const apiClient = {
       existing.unrealized_pnl_pct = +((existing.unrealized_pnl / existing.cost_basis) * 100).toFixed(2);
     } else {
       mockPortfolio.positions.push({
-        symbol,
-        name: `${symbol} Corp`,
-        quantity,
-        avg_buy_price: price,
-        current_price: price * 1.02,
-        cost_basis: +(price * quantity).toFixed(2),
-        current_value: +(price * 1.02 * quantity).toFixed(2),
-        unrealized_pnl: +(price * 0.02 * quantity).toFixed(2),
+        symbol: sym,
+        name: `${sym} Corp`,
+        quantity: qty,
+        avg_buy_price: execPrice,
+        current_price: execPrice * 1.02,
+        cost_basis: +(execPrice * qty).toFixed(2),
+        current_value: +(execPrice * 1.02 * qty).toFixed(2),
+        unrealized_pnl: +(execPrice * 0.02 * qty).toFixed(2),
         unrealized_pnl_pct: 2.0,
         allocation_pct: 10.0,
       });
@@ -554,18 +631,33 @@ export const apiClient = {
     return { ...mockPortfolio };
   },
 
-  async removePosition(id, symbol, quantity) {
+  async removePosition(id, symbol, quantity, token) {
+    const sym = (symbol || '').toUpperCase().trim();
+    const qty = quantity ? parseInt(quantity, 10) : null;
+    const portId = id || 'default-demo-portfolio';
+
     try {
-      const url = quantity
-        ? `${API_BASE}/portfolio/${id}/positions/${symbol}?quantity=${quantity}`
-        : `${API_BASE}/portfolio/${id}/positions/${symbol}`;
-      const res = await fetch(url, { method: 'DELETE' });
-      if (res.ok) return res.json();
-    } catch {
-      // fallback
+      const url = qty
+        ? `${API_BASE}/portfolio/${portId}/positions/${sym}?quantity=${qty}`
+        : `${API_BASE}/portfolio/${portId}/positions/${sym}`;
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders(token),
+      });
+      if (res.ok) {
+        this.isBackendConnected = true;
+        return await res.json();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to remove position');
+      }
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch'))) {
+        throw err;
+      }
     }
 
-    mockPortfolio.positions = mockPortfolio.positions.filter((p) => p.symbol !== symbol);
+    mockPortfolio.positions = mockPortfolio.positions.filter((p) => p.symbol !== sym);
     const totalVal = mockPortfolio.positions.reduce((acc, p) => acc + p.current_value, 0) || 1;
     mockPortfolio.positions.forEach((p) => {
       p.allocation_pct = +((p.current_value / totalVal) * 100).toFixed(1);
@@ -579,12 +671,29 @@ export const apiClient = {
   },
 
   // Watchlist
-  async getWatchlist() {
+  async getWatchlist(token) {
     try {
-      const res = await fetch(`${API_BASE}/watchlist`, { signal: AbortSignal.timeout(2000) });
+      const res = await fetch(`${API_BASE}/watchlist`, {
+        headers: this.getAuthHeaders(token),
+        signal: AbortSignal.timeout(3000),
+      });
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          return data.map((item) => {
+            if (typeof item === 'string') {
+              return {
+                symbol: item,
+                name: `${item} Equity`,
+                current_price: 150.0,
+                previous_close: 148.0,
+                sector: 'Equities',
+              };
+            }
+            return item;
+          });
+        }
       }
     } catch {
       // fallback
@@ -592,47 +701,69 @@ export const apiClient = {
     return inMemoryWatchlist;
   },
 
-  async addToWatchlist(symbol) {
+  async addToWatchlist(symbol, token) {
+    const sym = (symbol || '').toUpperCase().trim();
     try {
       const res = await fetch(`${API_BASE}/watchlist`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol }),
+        headers: { 'Content-Type': 'application/json', ...this.getAuthHeaders(token) },
+        body: JSON.stringify({ symbol: sym }),
       });
-      if (res.ok) return await this.getWatchlist();
-    } catch {
-      // fallback
+      if (res.ok) {
+        this.isBackendConnected = true;
+        return await this.getWatchlist(token);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to add to watchlist');
+      }
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch'))) {
+        throw err;
+      }
     }
-    if (!inMemoryWatchlist.some((s) => s.symbol === symbol)) {
+    if (!inMemoryWatchlist.some((s) => s.symbol === sym)) {
       inMemoryWatchlist.push({
-        symbol,
-        name: `${symbol} Equity`,
+        symbol: sym,
+        name: `${sym} Equity`,
         current_price: 150.0 + Math.random() * 50,
         previous_close: 148.0,
         sector: 'Equities',
       });
     }
-    return inMemoryWatchlist;
+    return [...inMemoryWatchlist];
   },
 
-  async removeFromWatchlist(symbol) {
+  async removeFromWatchlist(symbol, token) {
+    const sym = (symbol || '').toUpperCase().trim();
     try {
-      const res = await fetch(`${API_BASE}/watchlist/${symbol}`, { method: 'DELETE' });
-      if (res.ok) return await this.getWatchlist();
-    } catch {
-      // fallback
+      const res = await fetch(`${API_BASE}/watchlist/${sym}`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders(token),
+      });
+      if (res.ok) {
+        this.isBackendConnected = true;
+        return await this.getWatchlist(token);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to remove from watchlist');
+      }
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch'))) {
+        throw err;
+      }
     }
-    inMemoryWatchlist = inMemoryWatchlist.filter((s) => s.symbol !== symbol);
-    return inMemoryWatchlist;
+    inMemoryWatchlist = inMemoryWatchlist.filter((s) => s.symbol !== sym);
+    return [...inMemoryWatchlist];
   },
 
   // Sentiment
   async getSentiment(symbol) {
+    const sym = encodeURIComponent((symbol || 'AAPL').toUpperCase().trim());
     try {
-      const res = await fetch(`${API_BASE}/sentiment/${symbol}`, { signal: AbortSignal.timeout(3000) });
+      const res = await fetch(`${API_BASE}/sentiment/${sym}`, { signal: AbortSignal.timeout(8000) });
       if (res.ok) {
         this.isBackendConnected = true;
-        return res.json();
+        return await res.json();
       }
     } catch {
       // fallback
