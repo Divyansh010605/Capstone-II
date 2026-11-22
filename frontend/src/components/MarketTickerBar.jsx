@@ -26,7 +26,8 @@ export const MarketTickerBar = ({ availableStocks = [] }) => {
           const drift = (Math.random() - 0.49) * (t.price * 0.001);
           const newPrice = +(t.price + drift).toFixed(2);
           const totalChg = +(t.chg + drift).toFixed(2);
-          const totalPct = +((totalChg / (t.price - t.chg)) * 100).toFixed(2);
+          const denom = t.price - t.chg;
+          const totalPct = denom !== 0 ? +((totalChg / denom) * 100).toFixed(2) : 0;
           return { ...t, price: newPrice, chg: totalChg, pct: totalPct };
         })
       );

@@ -85,7 +85,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
           <div className="bg-[#090d16] p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
             <span className="text-xs text-slate-400 font-medium">Annualized Volatility</span>
             <div className="mt-2 text-2xl font-black font-mono text-white">
-              {riskData.annualized_volatility_pct}%
+              {riskData.annualized_volatility_pct != null ? `${riskData.annualized_volatility_pct}%` : 'N/A'}
             </div>
             <span className="text-[11px] text-slate-500 font-mono mt-1 block">
               252-day continuous log return σ
@@ -96,17 +96,17 @@ export const RiskDashboard = ({ riskData, symbol }) => {
             <span className="text-xs text-slate-400 font-medium">Maximum Drawdown</span>
             <div className="mt-2 text-2xl font-black font-mono text-rose-400 flex items-center gap-1">
               <ArrowDownRight className="w-6 h-6" />
-              {riskData.maximum_drawdown_pct}%
+              {riskData.maximum_drawdown_pct != null ? `${riskData.maximum_drawdown_pct}%` : 'N/A'}
             </div>
             <span className="text-[11px] text-slate-500 font-mono mt-1 block truncate">
-              Peak: {riskData.mdd_peak_date} → Trough: {riskData.mdd_trough_date}
+              Peak: {riskData.mdd_peak_date || 'N/A'} → Trough: {riskData.mdd_trough_date || 'N/A'}
             </span>
           </div>
 
           <div className="bg-[#090d16] p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
             <span className="text-xs text-slate-400 font-medium">Sharpe Ratio</span>
             <div className="mt-2 text-2xl font-black font-mono text-cyan-400">
-              {riskData.sharpe_ratio}
+              {riskData.sharpe_ratio != null ? riskData.sharpe_ratio : 'N/A'}
             </div>
             <span className="text-[11px] text-slate-500 font-mono mt-1 block">
               Risk-free benchmark: 4.0%
@@ -116,7 +116,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
           <div className="bg-[#090d16] p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
             <span className="text-xs text-slate-400 font-medium">Sortino Ratio</span>
             <div className="mt-2 text-2xl font-black font-mono text-purple-400">
-              {riskData.sortino_ratio}
+              {riskData.sortino_ratio != null ? riskData.sortino_ratio : 'N/A'}
             </div>
             <span className="text-[11px] text-slate-500 font-mono mt-1 block">
               Downside volatility penalty only
@@ -129,7 +129,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
           <strong className="text-cyan-400 font-mono uppercase tracking-wider block mb-1">
             Quantitative Risk Profile Verdict
           </strong>
-          {riskData.risk_description}
+          {riskData.risk_description || 'Standard market risk profile calibrated to equity historical data.'}
         </div>
       </div>
 
@@ -150,26 +150,26 @@ export const RiskDashboard = ({ riskData, symbol }) => {
           <div className="space-y-2.5 text-xs font-mono">
             <div className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] border border-white/5">
               <span className="text-slate-400">Parametric (Variance-Covariance)</span>
-              <span className="text-rose-400 font-bold">-{var95.parametric_var_pct}%</span>
+              <span className="text-rose-400 font-bold">{var95.parametric_var_pct != null ? `-${var95.parametric_var_pct}%` : 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] border border-white/5">
               <span className="text-slate-400">Historical Simulation</span>
-              <span className="text-rose-400 font-bold">-{var95.historical_var_pct}%</span>
+              <span className="text-rose-400 font-bold">{var95.historical_var_pct != null ? `-${var95.historical_var_pct}%` : 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] border border-white/5">
               <span className="text-slate-400">Monte Carlo (10,000 GBM Walks)</span>
-              <span className="text-rose-400 font-bold">-{var95.monte_carlo_var_pct}%</span>
+              <span className="text-rose-400 font-bold">{var95.monte_carlo_var_pct != null ? `-${var95.monte_carlo_var_pct}%` : 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
               <span className="text-cyan-300 font-bold">Composite 1-Day VaR (95%)</span>
-              <span className="text-cyan-300 font-black text-sm">-{var95.composite_var_pct}%</span>
+              <span className="text-cyan-300 font-black text-sm">{var95.composite_var_pct != null ? `-${var95.composite_var_pct}%` : 'N/A'}</span>
             </div>
 
             {/* Conditional VaR (Expected Shortfall) */}
             <div className="p-3.5 rounded-lg bg-[#090d16] border border-white/10 mt-3">
               <div className="flex justify-between items-center text-slate-300 mb-1">
                 <span className="font-semibold text-white">Conditional VaR (Expected Shortfall)</span>
-                <span className="text-rose-400 font-bold text-sm">-{cvar95.cvar_pct}%</span>
+                <span className="text-rose-400 font-bold text-sm">{cvar95.cvar_pct != null ? `-${cvar95.cvar_pct}%` : 'N/A'}</span>
               </div>
               <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
                 {cvar95.description || 'Average expected tail loss when daily shock breaches the 95% threshold.'}
@@ -193,26 +193,26 @@ export const RiskDashboard = ({ riskData, symbol }) => {
           <div className="space-y-2.5 text-xs font-mono">
             <div className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] border border-white/5">
               <span className="text-slate-400">Parametric Stress VaR</span>
-              <span className="text-rose-400 font-bold">-{var99.parametric_var_pct}%</span>
+              <span className="text-rose-400 font-bold">{var99.parametric_var_pct != null ? `-${var99.parametric_var_pct}%` : 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] border border-white/5">
               <span className="text-slate-400">Historical Tail VaR</span>
-              <span className="text-rose-400 font-bold">-{var99.historical_var_pct}%</span>
+              <span className="text-rose-400 font-bold">{var99.historical_var_pct != null ? `-${var99.historical_var_pct}%` : 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-[#090d16] border border-white/5">
               <span className="text-slate-400">Monte Carlo Severe Shock</span>
-              <span className="text-rose-400 font-bold">-{var99.monte_carlo_var_pct}%</span>
+              <span className="text-rose-400 font-bold">{var99.monte_carlo_var_pct != null ? `-${var99.monte_carlo_var_pct}%` : 'N/A'}</span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-rose-500/10 border border-rose-500/30">
               <span className="text-rose-300 font-bold">Composite Stress VaR (99%)</span>
-              <span className="text-rose-300 font-black text-sm">-{var99.composite_var_pct}%</span>
+              <span className="text-rose-300 font-black text-sm">{var99.composite_var_pct != null ? `-${var99.composite_var_pct}%` : 'N/A'}</span>
             </div>
 
             {/* Extreme CVaR */}
             <div className="p-3.5 rounded-lg bg-[#090d16] border border-white/10 mt-3">
               <div className="flex justify-between items-center text-slate-300 mb-1">
                 <span className="font-semibold text-white">Stress CVaR (99% Tail Shock)</span>
-                <span className="text-rose-400 font-bold text-sm">-{cvar99.cvar_pct}%</span>
+                <span className="text-rose-400 font-bold text-sm">{cvar99.cvar_pct != null ? `-${cvar99.cvar_pct}%` : 'N/A'}</span>
               </div>
               <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
                 Captures catastrophic black-swan tail losses beyond the 99th percentile boundary.

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
   Cpu,
@@ -24,6 +24,10 @@ export const Navbar = ({
   isBackendOnline,
 }) => {
   const [searchInput, setSearchInput] = useState(selectedSymbol);
+
+  useEffect(() => {
+    setSearchInput(selectedSymbol);
+  }, [selectedSymbol]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

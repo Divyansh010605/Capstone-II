@@ -83,10 +83,10 @@ export const PortfolioManager = ({
           <div className="bg-[#090d16] p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
             <span className="text-xs text-slate-400 font-medium">Total Portfolio Value</span>
             <div className="mt-2 text-2xl font-black font-mono text-white">
-              ${portfolio?.total_portfolio_value?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ${portfolio?.total_portfolio_value != null ? Number(portfolio.total_portfolio_value).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
             </div>
             <span className="text-[11px] text-slate-400 font-mono mt-1 block">
-              Cash: ${portfolio?.cash?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              Cash: ${portfolio?.cash != null ? Number(portfolio.cash).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
             </span>
           </div>
 
@@ -94,14 +94,14 @@ export const PortfolioManager = ({
             <span className="text-xs text-slate-400 font-medium">Total Unrealized P&L</span>
             <div
               className={`mt-2 text-2xl font-black font-mono flex items-center gap-1 ${
-                portfolio?.total_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                (portfolio?.total_pnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
               }`}
             >
-              {portfolio?.total_pnl >= 0 ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownRight className="w-6 h-6" />}
-              ${Math.abs(portfolio?.total_pnl || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              {(portfolio?.total_pnl ?? 0) >= 0 ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownRight className="w-6 h-6" />}
+              ${Math.abs(Number(portfolio?.total_pnl || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
             </div>
             <span className="text-[11px] font-mono font-bold text-slate-300 mt-1 block">
-              Return: {portfolio?.total_return_pct > 0 ? `+${portfolio?.total_return_pct}%` : `${portfolio?.total_return_pct}%`}
+              Return: {portfolio?.total_return_pct != null ? (portfolio.total_return_pct > 0 ? `+${portfolio.total_return_pct}%` : `${portfolio.total_return_pct}%`) : '0.00%'}
             </span>
           </div>
 
@@ -141,11 +141,11 @@ export const PortfolioManager = ({
           <div className="h-3 w-full bg-slate-900 rounded-full overflow-hidden flex border border-white/10">
             {allocations.map((alloc, idx) => (
               <div
-                key={alloc.symbol}
-                title={`${alloc.symbol}: ${alloc.allocation_pct}%`}
+                key={`${alloc.symbol || 'alloc'}-${idx}`}
+                title={`${alloc.symbol || 'Stock'}: ${alloc.allocation_pct || 0}%`}
                 className="h-full transition-all hover:opacity-80"
                 style={{
-                  width: `${alloc.allocation_pct}%`,
+                  width: `${alloc.allocation_pct || 0}%`,
                   backgroundColor: colorPalette[idx % colorPalette.length],
                 }}
               />
@@ -158,12 +158,12 @@ export const PortfolioManager = ({
               const color = colorPalette[idx % colorPalette.length];
               return (
                 <div
-                  key={alloc.symbol}
+                  key={`${alloc.symbol || 'alloc'}-${idx}`}
                   className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/5 text-xs font-mono flex items-center gap-2"
                 >
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }}></span>
                   <strong className="text-white">{alloc.symbol}</strong>
-                  <span className="text-slate-400">{alloc.allocation_pct}%</span>
+                  <span className="text-slate-400">{alloc.allocation_pct || 0}%</span>
                 </div>
               );
             })}
@@ -204,30 +204,31 @@ export const PortfolioManager = ({
                   </td>
                 </tr>
               ) : (
-                positions.map((pos) => {
-                  const isProfit = pos.unrealized_pnl >= 0;
+                positions.map((pos, idx) => {
+                  const isProfit = (pos.unrealized_pnl ?? 0) >= 0;
+                  const sym = pos.symbol || 'ASSET';
                   return (
-                    <tr key={pos.symbol} className="hover:bg-white/[0.03] transition-colors">
+                    <tr key={`${sym}-${idx}`} className="hover:bg-white/[0.03] transition-colors">
                       <td className="px-5 py-3.5">
-                        <div className="font-bold text-white text-sm">{pos.symbol}</div>
-                        <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{pos.name}</div>
+                        <div className="font-bold text-white text-sm">{sym}</div>
+                        <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{pos.name || `${sym} Holding`}</div>
                       </td>
-                      <td className="px-5 py-3.5 text-slate-200 font-medium">{pos.quantity}</td>
-                      <td className="px-5 py-3.5 text-slate-400">${pos.avg_buy_price?.toFixed(2)}</td>
-                      <td className="px-5 py-3.5 text-white font-bold">${pos.current_price?.toFixed(2)}</td>
+                      <td className="px-5 py-3.5 text-slate-200 font-medium">{pos.quantity ?? 0}</td>
+                      <td className="px-5 py-3.5 text-slate-400">${pos.avg_buy_price != null ? Number(pos.avg_buy_price).toFixed(2) : '0.00'}</td>
+                      <td className="px-5 py-3.5 text-white font-bold">${pos.current_price != null ? Number(pos.current_price).toFixed(2) : '0.00'}</td>
                       <td className="px-5 py-3.5 text-white font-bold">
-                        ${pos.current_value?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        ${pos.current_value != null ? Number(pos.current_value).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
                       </td>
                       <td className={`px-5 py-3.5 font-bold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {isProfit ? '+' : ''}${pos.unrealized_pnl?.toFixed(2)}
+                        {isProfit ? '+' : ''}${pos.unrealized_pnl != null ? Number(pos.unrealized_pnl).toFixed(2) : '0.00'}
                       </td>
                       <td className={`px-5 py-3.5 font-bold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {isProfit ? '+' : ''}{pos.unrealized_pnl_pct?.toFixed(2)}%
+                        {isProfit ? '+' : ''}{pos.unrealized_pnl_pct != null ? Number(pos.unrealized_pnl_pct).toFixed(2) : '0.00'}%
                       </td>
-                      <td className="px-5 py-3.5 text-slate-300 font-medium">{pos.allocation_pct}%</td>
+                      <td className="px-5 py-3.5 text-slate-300 font-medium">{pos.allocation_pct ?? 0}%</td>
                       <td className="px-5 py-3.5 text-right">
                         <button
-                          onClick={() => onRemovePosition(pos.symbol)}
+                          onClick={() => onRemovePosition(sym)}
                           title="Liquidate / Remove Position"
                           className="p-1.5 rounded-lg hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors border border-transparent hover:border-rose-500/30"
                         >

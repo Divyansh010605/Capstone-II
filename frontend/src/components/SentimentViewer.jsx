@@ -22,7 +22,7 @@ export const SentimentViewer = ({ sentimentData, symbol }) => {
   }
 
   const overall = sentimentData.overall_sentiment || 'Neutral';
-  const index100 = Math.round(sentimentData.sentiment_index_100 || 50);
+  const index100 = Math.round(Number(sentimentData.sentiment_index_100 ?? 50));
   const breakdown = sentimentData.breakdown || { positive_pct: 33, neutral_pct: 34, negative_pct: 33 };
   const articles = sentimentData.articles || [];
 
@@ -86,7 +86,7 @@ export const SentimentViewer = ({ sentimentData, symbol }) => {
             </div>
             <div>
               <div className="text-xs text-slate-400 font-medium">Bullish / Positive Coverage</div>
-              <div className="text-2xl font-black font-mono text-emerald-400">{breakdown.positive_pct}%</div>
+              <div className="text-2xl font-black font-mono text-emerald-400">{breakdown.positive_pct ?? 0}%</div>
             </div>
           </div>
 
@@ -96,7 +96,7 @@ export const SentimentViewer = ({ sentimentData, symbol }) => {
             </div>
             <div>
               <div className="text-xs text-slate-400 font-medium">Neutral / Balanced News</div>
-              <div className="text-2xl font-black font-mono text-amber-400">{breakdown.neutral_pct}%</div>
+              <div className="text-2xl font-black font-mono text-amber-400">{breakdown.neutral_pct ?? 0}%</div>
             </div>
           </div>
 
@@ -106,7 +106,7 @@ export const SentimentViewer = ({ sentimentData, symbol }) => {
             </div>
             <div>
               <div className="text-xs text-slate-400 font-medium">Bearish / Negative Signals</div>
-              <div className="text-2xl font-black font-mono text-rose-400">{breakdown.negative_pct}%</div>
+              <div className="text-2xl font-black font-mono text-rose-400">{breakdown.negative_pct ?? 0}%</div>
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@ export const SentimentViewer = ({ sentimentData, symbol }) => {
             <Sparkles className="w-4 h-4 text-indigo-400" />
             NLP Financial News Synthesis
           </strong>
-          {sentimentData.sentiment_summary}
+          {sentimentData.sentiment_summary || 'Standard market news sentiment indexed across recent headlines.'}
         </div>
       </div>
 
@@ -150,31 +150,31 @@ export const SentimentViewer = ({ sentimentData, symbol }) => {
 
               return (
                 <div
-                  key={idx}
+                  key={`${art.title || 'art'}-${idx}`}
                   className="p-4 rounded-xl bg-[#090d16] border border-white/5 hover:border-white/15 transition-all space-y-2"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
-                      <span className="font-bold text-slate-200">{art.publisher}</span>
+                      <span className="font-bold text-slate-200">{art.publisher || 'MarketWire'}</span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-slate-500" />
-                        {art.published_at}
+                        {art.published_at || 'Recently'}
                       </span>
                     </div>
 
                     <span className={`text-[10px] px-2.5 py-0.5 rounded-full border font-mono font-bold self-start sm:self-auto ${badgeStyle}`}>
-                      {art.sentiment} ({art.score > 0 ? `+${art.score}` : art.score})
+                      {art.sentiment || 'Neutral'} ({art.score != null ? (art.score > 0 ? `+${art.score}` : art.score) : '0.00'})
                     </span>
                   </div>
 
                   <h5 className="text-sm font-semibold text-white leading-snug hover:text-cyan-400 transition-colors">
-                    {art.title}
+                    {art.title || 'Untitled Headline'}
                   </h5>
 
                   <div className="pt-1 flex items-center justify-between text-xs">
                     <span className="text-[11px] font-mono text-slate-500">
-                      NLP Confidence: {Math.round((art.confidence || 0.85) * 100)}%
+                      NLP Confidence: {Math.round((art.confidence ?? 0.85) * 100)}%
                     </span>
                     {art.url && (
                       <a
