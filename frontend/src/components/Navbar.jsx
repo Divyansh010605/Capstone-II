@@ -170,10 +170,12 @@ export const Navbar = ({
 
             <button
               onClick={onOpenAuth}
-              className="btn-secondary text-xs px-3 py-2 font-mono flex items-center gap-1.5 border-white/10 hover:border-cyan-500/30"
+              className={`btn-secondary text-xs px-3 py-2 font-mono flex items-center gap-1.5 border-white/10 ${
+                user ? 'hover:border-cyan-500/30' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20'
+              }`}
             >
               <User className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{user ? user.username : 'Account'}</span>
+              <span>{user ? user.username : 'Sign In / Register'}</span>
             </button>
           </div>
         </div>

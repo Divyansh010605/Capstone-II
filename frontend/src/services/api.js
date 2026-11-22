@@ -414,6 +414,121 @@ export const apiClient = {
     };
   },
 
+  async forgotPassword(email) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: (email || '').trim().toLowerCase() }),
+      });
+      if (res.ok) {
+        this.isBackendConnected = true;
+        return await res.json();
+      }
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to send OTP verification email');
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch'))) {
+        throw err;
+      }
+      // Offline fallback mock
+      const mockOtp = String(Math.floor(100000 + Math.random() * 900000));
+      return {
+        message: 'A 6-digit verification code has been dispatched.',
+        success: true,
+        dev_otp: mockOtp,
+      };
+    }
+  },
+
+  async verifyOtp(email, otp) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: (email || '').trim().toLowerCase(), otp: (otp || '').trim() }),
+      });
+      if (res.ok) {
+        this.isBackendConnected = true;
+        return await res.json();
+      }
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Invalid verification code');
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch'))) {
+        throw err;
+      }
+      return { message: 'Code verified successfully', success: true };
+    }
+  },
+
+  async resetPassword(email, otp, newPassword, confirmPassword) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: (email || '').trim().toLowerCase(),
+          otp: (otp || '').trim(),
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        }),
+      });
+      if (res.ok) {
+        this.isBackendConnected = true;
+        return await res.json();
+      }
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Password reset failed');
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch'))) {
+        throw err;
+      }
+      return { message: 'Password reset successful', success: true };
+    }
+  },
+
+  async oauthLogin(provider, profileData = {}) {
+    const prov = (provider || 'google').toLowerCase();
+    try {
+      const res = await fetch(`${API_BASE}/auth/oauth/${prov}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: prov,
+          email: profileData.email || undefined,
+          username: profileData.username || undefined,
+          name: profileData.name || undefined,
+          avatar_url: profileData.avatar_url || undefined,
+          oauth_token: profileData.oauth_token || undefined,
+        }),
+      });
+      if (res.ok) {
+        this.isBackendConnected = true;
+        const data = await res.json();
+        if (data.access_token) {
+          this.setToken(data.access_token);
+        }
+        return data;
+      }
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `${provider} authentication failed`);
+    } catch (err) {
+      if (this.isBackendConnected || (err.message && !err.message.includes('fetch'))) {
+        throw err;
+      }
+      const mockUser = {
+        id: `oauth-${prov}-${Date.now().toString().slice(-4)}`,
+        username: profileData.username || `${prov}_trader`,
+        email: profileData.email || `${prov}_user@${prov}.com`,
+        full_name: profileData.name || `${prov.toUpperCase()} Trader`,
+      };
+      const token = `mock-${prov}-jwt-token-${Date.now()}`;
+      this.setToken(token);
+      return { access_token: token, token_type: 'bearer', user: mockUser };
+    }
+  },
+
   // Stocks
   async getStocks() {
     try {

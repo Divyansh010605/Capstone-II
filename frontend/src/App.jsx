@@ -8,6 +8,7 @@ import { PortfolioManager } from './components/PortfolioManager';
 import { SentimentViewer } from './components/SentimentViewer';
 import { WatchlistModal } from './components/WatchlistModal';
 import { AuthModal } from './components/AuthModal';
+import { AuthPage } from './components/AuthPage';
 import { apiClient } from './services/api';
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Info } from 'lucide-react';
 
@@ -69,6 +70,7 @@ export function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('alpha_jwt_token') || '');
+  const [isGuestMode, setIsGuestMode] = useState(false);
 
   // Loading indicators
   const [loading, setLoading] = useState(false);
@@ -197,11 +199,19 @@ export function App() {
     } catch (err) { alert(`Watchlist remove failed: ${err.message}`); }
   };
 
+  const handleLoginSuccess = (userData, tokenValue) => {
+    if (tokenValue) {
+      localStorage.setItem('alpha_jwt_token', tokenValue);
+      setToken(tokenValue);
+      apiClient.setToken(tokenValue);
+    }
+    setUser(userData);
+    setIsGuestMode(false);
+  };
+
   const handleLogin = async (usr, pwd) => {
     const res = await apiClient.login(usr, pwd);
-    localStorage.setItem('alpha_jwt_token', res.access_token);
-    setToken(res.access_token);
-    setUser(res.user);
+    handleLoginSuccess(res.user, res.access_token);
   };
 
   const handleRegister = async (data) => {
@@ -212,7 +222,10 @@ export function App() {
   const handleLogout = () => {
     localStorage.removeItem('alpha_jwt_token');
     setToken('');
+    apiClient.setToken('');
     setUser(null);
+    setIsGuestMode(false);
+    setIsAuthOpen(false);
   };
 
   const handleRefreshPredictions = async () => {
@@ -227,6 +240,15 @@ export function App() {
       setPredLoading(false);
     }
   };
+
+  if (!user && !isGuestMode) {
+    return (
+      <AuthPage
+        onLoginSuccess={handleLoginSuccess}
+        onExploreGuest={() => setIsGuestMode(true)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#06080d] text-[#e2e8f0] selection:bg-cyan-500/30 selection:text-white">
