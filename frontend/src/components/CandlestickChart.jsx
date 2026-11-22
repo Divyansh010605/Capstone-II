@@ -22,7 +22,7 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => 
 
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
-    const width = Math.max(container.clientWidth, 320);
+    const width = Math.max(container.clientWidth || 320, 320);
     const height = 460;
 
     canvas.width = Math.floor(width * dpr);
@@ -64,9 +64,9 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => 
     const pricePadding = (maxPrice - minPrice) * 0.05 || 1;
     minPrice -= pricePadding;
     maxPrice += pricePadding;
-    const priceRange = maxPrice - minPrice;
+    const priceRange = (maxPrice - minPrice) || 1;
 
-    const getY = (val) => padding.top + (1 - (val - minPrice) / priceRange) * priceChartHeight;
+    const getY = (val) => padding.top + (1 - ((val ?? minPrice) - minPrice) / priceRange) * priceChartHeight;
     const getX = (idx) => padding.left + (idx + 0.5) * (chartWidth / records.length);
     const candleWidth = Math.max(2, Math.min(18, (chartWidth / records.length) * 0.72));
 
@@ -233,7 +233,7 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 10px JetBrains Mono, monospace';
       ctx.textAlign = 'left';
-      ctx.fillText(`$${rec.close.toFixed(2)}`, width - padding.right + 6, hY + 3.5);
+      ctx.fillText(`$${Number(rec.close || 0).toFixed(2)}`, width - padding.right + 6, hY + 3.5);
 
       // X-Axis Date Tag
       ctx.fillStyle = '#1e293b';
@@ -242,7 +242,7 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => 
       ctx.strokeRect(hX - 35, height - padding.bottom + 6, 70, 18);
       ctx.fillStyle = '#f8fafc';
       ctx.textAlign = 'center';
-      ctx.fillText(rec.date.slice(5), hX, height - padding.bottom + 19);
+      ctx.fillText(rec.date ? String(rec.date).slice(5) : '', hX, height - padding.bottom + 19);
     } else {
       // Date stamps on X-axis (every few bars)
       ctx.fillStyle = '#64748b';
@@ -250,16 +250,29 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => 
       ctx.textAlign = 'center';
       const step = Math.max(1, Math.floor(records.length / 6));
       for (let i = 0; i < records.length; i += step) {
-        ctx.fillText(records[i].date.slice(5), getX(i), height - padding.bottom + 16);
+        const dStr = records[i]?.date ? String(records[i].date).slice(5) : '';
+        ctx.fillText(dStr, getX(i), height - padding.bottom + 16);
       }
     }
   }, [records, hoverIndex, showSMA, showEMA, showBB]);
 
   useEffect(() => {
     renderChart();
+
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        renderChart();
+      });
+      resizeObserver.observe(containerRef.current);
+    }
+
     const handleResize = () => renderChart();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeObserver) resizeObserver.disconnect();
+    };
   }, [renderChart]);
 
   const activeRecord = hoverIndex !== null && records[hoverIndex] ? records[hoverIndex] : records[records.length - 1];
@@ -270,13 +283,19 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left - 15;
     const chartWidth = canvas.clientWidth - 80;
+    if (chartWidth <= 0 || x < 0 || x > chartWidth) {
+      setHoverIndex(null);
+      return;
+    }
     const idx = Math.floor((x / chartWidth) * records.length);
     if (idx >= 0 && idx < records.length) {
       setHoverIndex(idx);
+    } else {
+      setHoverIndex(null);
     }
   };
 
-  const pctChange = activeRecord && activeRecord.open
+  const pctChange = activeRecord && typeof activeRecord.open === 'number' && activeRecord.open > 0 && typeof activeRecord.close === 'number'
     ? (((activeRecord.close - activeRecord.open) / activeRecord.open) * 100).toFixed(2)
     : '0.00';
   const isUp = activeRecord ? activeRecord.close >= activeRecord.open : true;
@@ -288,9 +307,9 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => 
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-2xl font-black font-mono tracking-tight text-white">{symbol}</h2>
-            {activeRecord && (
+            {activeRecord && typeof activeRecord.close === 'number' && (
               <span className="text-3xl font-extrabold font-mono text-white tracking-tight">
-                ${activeRecord.close?.toFixed(2)}
+                ${activeRecord.close.toFixed(2)}
               </span>
             )}
             {activeRecord && (
@@ -302,19 +321,19 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => 
                 }`}
               >
                 {isUp ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                {pctChange > 0 ? `+${pctChange}%` : `${pctChange}%`}
+                {Number(pctChange) > 0 ? `+${pctChange}%` : `${pctChange}%`}
               </span>
             )}
           </div>
 
           {activeRecord && (
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-mono text-slate-400 pt-1">
-              <span>Date: <strong className="text-slate-200">{activeRecord.date}</strong></span>
-              <span>Open: <strong className="text-slate-200">${activeRecord.open?.toFixed(2)}</strong></span>
-              <span>High: <strong className="text-emerald-400">${activeRecord.high?.toFixed(2)}</strong></span>
-              <span>Low: <strong className="text-rose-400">${activeRecord.low?.toFixed(2)}</strong></span>
-              <span>Close: <strong className="text-slate-200">${activeRecord.close?.toFixed(2)}</strong></span>
-              <span>Vol: <strong className="text-slate-300">{activeRecord.volume?.toLocaleString()}</strong></span>
+              <span>Date: <strong className="text-slate-200">{activeRecord.date || 'N/A'}</strong></span>
+              <span>Open: <strong className="text-slate-200">${typeof activeRecord.open === 'number' ? activeRecord.open.toFixed(2) : '0.00'}</strong></span>
+              <span>High: <strong className="text-emerald-400">${typeof activeRecord.high === 'number' ? activeRecord.high.toFixed(2) : '0.00'}</strong></span>
+              <span>Low: <strong className="text-rose-400">${typeof activeRecord.low === 'number' ? activeRecord.low.toFixed(2) : '0.00'}</strong></span>
+              <span>Close: <strong className="text-slate-200">${typeof activeRecord.close === 'number' ? activeRecord.close.toFixed(2) : '0.00'}</strong></span>
+              <span>Vol: <strong className="text-slate-300">{typeof activeRecord.volume === 'number' ? activeRecord.volume.toLocaleString() : '0'}</strong></span>
             </div>
           )}
         </div>

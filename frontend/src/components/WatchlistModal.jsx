@@ -78,30 +78,36 @@ export const WatchlistModal = ({
               Your watchlist is currently empty. Add a symbol above to track real-time.
             </div>
           ) : (
-            watchlist.map((stock) => {
-              const isUp = (stock.current_price || 0) >= (stock.previous_close || 0);
-              const chgPct = stock.previous_close
-                ? (((stock.current_price - stock.previous_close) / stock.previous_close) * 100).toFixed(2)
+            watchlist.map((item, idx) => {
+              const stock = typeof item === 'string'
+                ? { symbol: item, name: `${item} Corp`, current_price: 150.0, previous_close: 148.0, sector: 'Equities' }
+                : item || {};
+              const sym = stock.symbol || 'UNKNOWN';
+              const curPrice = typeof stock.current_price === 'number' ? stock.current_price : 150.0;
+              const prevClose = typeof stock.previous_close === 'number' ? stock.previous_close : curPrice;
+              const isUp = curPrice >= prevClose;
+              const chgPct = prevClose > 0
+                ? (((curPrice - prevClose) / prevClose) * 100).toFixed(2)
                 : '0.00';
 
               return (
                 <div
-                  key={stock.symbol}
+                  key={`${sym}-${idx}`}
                   className="p-3.5 rounded-xl bg-[#090d16] border border-white/5 hover:border-white/20 transition-all flex items-center justify-between group"
                 >
                   <div
                     onClick={() => {
-                      onSelectStock(stock.symbol);
+                      onSelectStock(sym);
                       onClose();
                     }}
                     className="cursor-pointer space-y-0.5 flex-1"
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-bold font-mono text-white text-sm group-hover:text-cyan-400 transition-colors">
-                        {stock.symbol}
+                        {sym}
                       </span>
                       <span className="text-[11px] text-slate-400 truncate max-w-[160px]">
-                        {stock.name}
+                        {stock.name || `${sym} Equity`}
                       </span>
                     </div>
                     <div className="text-[10px] text-slate-500 font-mono">
@@ -112,20 +118,19 @@ export const WatchlistModal = ({
                   <div className="flex items-center gap-4">
                     <div className="text-right font-mono">
                       <div className="text-sm font-bold text-white">
-                        ${stock.current_price ? stock.current_price.toFixed(2) : '150.00'}
+                        ${curPrice.toFixed(2)}
                       </div>
                       <div
-                        className={`text-[11px] font-bold flex items-center justify-end ${
-                          isUp ? 'text-emerald-400' : 'text-rose-400'
-                        }`}
+                        className={`text-[11px] font-bold flex items-center justify-end ${isUp ? 'text-emerald-400' : 'text-rose-400'
+                          }`}
                       >
                         {isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                        {chgPct > 0 ? `+${chgPct}%` : `${chgPct}%`}
+                        {Number(chgPct) > 0 ? `+${chgPct}%` : `${chgPct}%`}
                       </div>
                     </div>
 
                     <button
-                      onClick={() => onRemoveFromWatchlist(stock.symbol)}
+                      onClick={() => onRemoveFromWatchlist(sym)}
                       className="p-2 rounded-lg hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 transition-colors border border-transparent hover:border-rose-500/30"
                       title="Remove from Watchlist"
                     >

@@ -36,7 +36,7 @@ export const PredictionPanel = ({
 
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
-    const width = Math.max(container.clientWidth, 320);
+    const width = Math.max(container.clientWidth || 320, 320);
     const height = 340;
 
     canvas.width = Math.floor(width * dpr);
@@ -61,19 +61,19 @@ export const PredictionPanel = ({
 
     let minP = Math.min(...allPrices);
     let maxP = Math.max(...allPrices);
-    if (minP === Infinity || maxP === -Infinity || minP === maxP) {
-      minP = currentPrice * 0.95;
-      maxP = currentPrice * 1.05;
+    if (!isFinite(minP) || !isFinite(maxP) || minP === maxP) {
+      minP = (currentPrice || 100) * 0.95;
+      maxP = (currentPrice || 100) * 1.05;
     }
 
     const margin = (maxP - minP) * 0.1 || 2;
     minP -= margin;
     maxP += margin;
-    const rangeP = maxP - minP;
+    const rangeP = (maxP - minP) || 1;
 
-    const getY = (val) => padding.top + (1 - (val - minP) / rangeP) * chartHeight;
+    const getY = (val) => padding.top + (1 - ((val ?? minP) - minP) / rangeP) * chartHeight;
     const totalPoints = forecast.length + 1;
-    const getX = (idx) => padding.left + (idx / (totalPoints - 1)) * chartWidth;
+    const getX = (idx) => totalPoints > 1 ? padding.left + (idx / (totalPoints - 1)) * chartWidth : padding.left + chartWidth / 2;
 
     // Background horizontal grid lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
@@ -170,13 +170,13 @@ export const PredictionPanel = ({
       ctx.fillStyle = '#94a3b8';
       ctx.font = '10px JetBrains Mono, monospace';
       ctx.textAlign = 'center';
-      ctx.fillText(f.date.slice(5), px, height - 14);
+      ctx.fillText(f.date ? String(f.date).slice(5) : '', px, height - 14);
 
       // Price value label on point for final horizon
       if (i === forecast.length - 1) {
         ctx.fillStyle = '#38bdf8';
         ctx.font = 'bold 11px JetBrains Mono, monospace';
-        ctx.fillText(`$${f.predicted_price.toFixed(2)}`, px, py - 12);
+        ctx.fillText(`$${Number(f.predicted_price || 0).toFixed(2)}`, px, py - 12);
       }
     });
 
@@ -189,9 +189,21 @@ export const PredictionPanel = ({
 
   useEffect(() => {
     renderForecastChart();
+
+    let resizeObserver = null;
+    if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        renderForecastChart();
+      });
+      resizeObserver.observe(containerRef.current);
+    }
+
     const handleResize = () => renderForecastChart();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeObserver) resizeObserver.disconnect();
+    };
   }, [renderForecastChart]);
 
   const trend = predictionData?.trend || 'Sideways';
@@ -307,10 +319,10 @@ export const PredictionPanel = ({
               <Target className="w-3.5 h-3.5 text-blue-400" />
             </div>
             <div className="mt-2 text-2xl font-black font-mono text-white">
-              ${targetPrice?.toFixed(2)}
+              ${Number(targetPrice || 0).toFixed(2)}
             </div>
             <div className="text-[11px] text-slate-400 font-mono mt-1">
-              From current ${currentPrice?.toFixed(2)}
+              From current ${Number(currentPrice || 0).toFixed(2)}
             </div>
           </div>
 
@@ -351,6 +363,11 @@ export const PredictionPanel = ({
               <div className="w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
               <span>Running PyTorch inference across Transformer & Recurrent models...</span>
             </div>
+          ) : forecast.length === 0 ? (
+            <div className="h-80 flex flex-col items-center justify-center text-slate-500 font-mono text-sm gap-2">
+              <Sparkles className="w-8 h-8 text-cyan-400" />
+              <span>No forecast points available. Click Re-Run above to generate predictions.</span>
+            </div>
           ) : (
             <canvas ref={chartCanvasRef} className="w-full block" />
           )}
@@ -379,28 +396,40 @@ export const PredictionPanel = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {forecast.map((f) => {
-                const spread = f.upper_bound - f.lower_bound;
-                return (
-                  <tr key={f.step} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="px-4 py-2.5 text-slate-300 font-semibold">
-                      +{f.step}D ({f.date})
-                    </td>
-                    <td className="px-4 py-2.5 text-cyan-400 font-bold">
-                      ${f.predicted_price.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-2.5 text-slate-400">
-                      ${f.lower_bound.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-2.5 text-slate-400">
-                      ${f.upper_bound.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right text-slate-300 font-medium">
-                      ±${(spread / 2).toFixed(2)} ({((spread / f.predicted_price) * 100).toFixed(1)}%)
-                    </td>
-                  </tr>
-                );
-              })}
+              {forecast.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-4 py-6 text-center text-slate-500 font-mono">
+                    No forecast data available for {selectedModel}.
+                  </td>
+                </tr>
+              ) : (
+                forecast.map((f, idx) => {
+                  const predPrice = typeof f.predicted_price === 'number' ? f.predicted_price : 0;
+                  const lowerBound = typeof f.lower_bound === 'number' ? f.lower_bound : predPrice;
+                  const upperBound = typeof f.upper_bound === 'number' ? f.upper_bound : predPrice;
+                  const spread = upperBound - lowerBound;
+                  const spreadPct = predPrice > 0 ? ((spread / predPrice) * 100).toFixed(1) : '0.0';
+                  return (
+                    <tr key={`${f.step ?? idx}-${f.date || idx}`} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-4 py-2.5 text-slate-300 font-semibold">
+                        +{f.step || idx + 1}D ({f.date || 'N/A'})
+                      </td>
+                      <td className="px-4 py-2.5 text-cyan-400 font-bold">
+                        ${predPrice.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-400">
+                        ${lowerBound.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-2.5 text-slate-400">
+                        ${upperBound.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-slate-300 font-medium">
+                        ±${(spread / 2).toFixed(2)} ({spreadPct}%)
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

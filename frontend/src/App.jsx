@@ -19,15 +19,17 @@ const StockInfoStrip = ({ symbol, historyData, loading }) => {
 
   if (!latest) return null;
 
-  const chg    = prev ? latest.close - prev.close : 0;
-  const chgPct = prev ? ((chg / prev.close) * 100).toFixed(2) : '0.00';
+  const latestClose = typeof latest.close === 'number' ? latest.close : 0;
+  const prevClose = prev && typeof prev.close === 'number' ? prev.close : latestClose;
+  const chg    = prev ? latestClose - prevClose : 0;
+  const chgPct = prevClose > 0 ? ((chg / prevClose) * 100).toFixed(2) : '0.00';
   const isUp   = chg >= 0;
 
   return (
     <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-[#090d16]/70 border-b border-white/5 text-xs font-mono backdrop-blur-sm">
       <div className="flex items-center gap-2">
         <span className="font-bold text-white text-sm">{symbol}</span>
-        <span className="font-black text-white">${latest.close?.toFixed(2)}</span>
+        <span className="font-black text-white">${latestClose.toFixed(2)}</span>
         <span className={`flex items-center gap-0.5 font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
           {isUp ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
           {isUp ? '+' : ''}{chgPct}%
@@ -35,14 +37,30 @@ const StockInfoStrip = ({ symbol, historyData, loading }) => {
       </div>
       <span className="text-slate-600 hidden sm:block">|</span>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-400 hidden sm:flex">
-        <span>Open: <strong className="text-slate-200">${latest.open?.toFixed(2)}</strong></span>
-        <span>High: <strong className="text-emerald-400">${latest.high?.toFixed(2)}</strong></span>
-        <span>Low: <strong className="text-rose-400">${latest.low?.toFixed(2)}</strong></span>
-        <span>Vol: <strong className="text-slate-200">{latest.volume?.toLocaleString()}</strong></span>
-        {latest.rsi_14 && <span>RSI: <strong className={`${latest.rsi_14 > 70 ? 'text-rose-400' : latest.rsi_14 < 30 ? 'text-emerald-400' : 'text-slate-200'}`}>{latest.rsi_14?.toFixed(1)}</strong></span>}
+        <span>Open: <strong className="text-slate-200">${typeof latest.open === 'number' ? latest.open.toFixed(2) : '0.00'}</strong></span>
+        <span>High: <strong className="text-emerald-400">${typeof latest.high === 'number' ? latest.high.toFixed(2) : '0.00'}</strong></span>
+        <span>Low: <strong className="text-rose-400">${typeof latest.low === 'number' ? latest.low.toFixed(2) : '0.00'}</strong></span>
+        <span>Vol: <strong className="text-slate-200">{typeof latest.volume === 'number' ? latest.volume.toLocaleString() : '0'}</strong></span>
+        {latest.rsi_14 != null && <span>RSI: <strong className={`${latest.rsi_14 > 70 ? 'text-rose-400' : latest.rsi_14 < 30 ? 'text-emerald-400' : 'text-slate-200'}`}>{Number(latest.rsi_14).toFixed(1)}</strong></span>}
       </div>
     </div>
   );
+};
+
+const normalizeWatchlist = (items) => {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => {
+    if (typeof item === 'string') {
+      return {
+        symbol: item,
+        name: `${item} Corp`,
+        current_price: 150.0,
+        previous_close: 148.0,
+        sector: 'Equities',
+      };
+    }
+    return item;
+  });
 };
 
 export function App() {
@@ -110,7 +128,7 @@ export function App() {
           apiClient.getWatchlist(),
         ]);
         if (port) setPortfolioData(port);
-        if (wl)   setWatchlist(wl);
+        if (wl)   setWatchlist(normalizeWatchlist(wl));
       } catch (err) {
         console.error('Portfolio/Watchlist init error:', err);
       }
@@ -186,14 +204,26 @@ export function App() {
   const handleAddToWatchlist = async (sym) => {
     try {
       const updated = await apiClient.addToWatchlist(sym);
-      setWatchlist(Array.isArray(updated) ? updated : watchlist);
+      if (Array.isArray(updated) && updated.length > 0 && typeof updated[0] === 'string') {
+        const fullWl = await apiClient.getWatchlist();
+        setWatchlist(normalizeWatchlist(fullWl));
+      } else if (Array.isArray(updated)) {
+        setWatchlist(normalizeWatchlist(updated));
+      }
     } catch (err) { alert(`Watchlist add failed: ${err.message}`); }
   };
 
   const handleRemoveFromWatchlist = async (sym) => {
     try {
       const updated = await apiClient.removeFromWatchlist(sym);
-      setWatchlist(Array.isArray(updated) ? updated : watchlist.filter(s => s.symbol !== sym));
+      if (Array.isArray(updated) && updated.length > 0 && typeof updated[0] === 'string') {
+        const fullWl = await apiClient.getWatchlist();
+        setWatchlist(normalizeWatchlist(fullWl));
+      } else if (Array.isArray(updated)) {
+        setWatchlist(normalizeWatchlist(updated));
+      } else {
+        setWatchlist((prev) => prev.filter((s) => (typeof s === 'string' ? s : s.symbol) !== sym));
+      }
     } catch (err) { alert(`Watchlist remove failed: ${err.message}`); }
   };
 
