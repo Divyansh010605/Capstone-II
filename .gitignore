@@ -1,10 +1,13 @@
-# Python
+# ==============================================================================
+# Stock Market AI Prediction & Risk Analysis — Git Ignore Configuration
+# ==============================================================================
+
+# ── 1. Python & Bytecode ──
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -17,45 +20,118 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-.pytest_cache/
-.coverage
-htmlcov/
-*.log
+MANIFEST
 
-# Virtual Environments
+# ── 2. Python Virtual Environments ──
 venv/
 .venv/
 ENV/
+env/
+env.bak/
+venv.bak/
 
-# Node / React
+# ── 3. Testing, Coverage & Linters ──
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.nox/
+.tox/
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+*.log
+
+# ── 4. Node.js & React / Vite ──
 node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/.cache/
+dist/
+.vite/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-frontend/build/
-frontend/dist/
+lerna-debug.log*
 
-# Environment and sensitive keys
+# ── 5. Environment & Sensitive Credentials ──
+# Ignore local environment files but keep the documentation template
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+!.env.example
 
-# IDE
-.idea/
+# ── 6. Databases & Local Volume Mounts ──
+*.sqlite
+*.sqlite3
+*.db
+mongodb_data/
+data/
+dumps/
+
+# ── 7. Model Checkpoints & Large Temporary Dumps ──
+*.pt.bak
+*.pt.tmp
+*.ckpt.bak
+*.pkl.bak
+ai_engine/checkpoints/*.tmp
+ai_engine/checkpoints/*.bak
+
+# ── 8. IDEs & Text Editors ──
 .vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
 *.swp
 *.swo
+*~
+*.sublime-workspace
+*.sublime-project
 
-# OS
-.DS_Store
+# ── 9. Operating System Files ──
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Model artifacts (keep checkpoints in training, ignore large binary dumps)
-ai_engine/checkpoints/*.pt.bak
-*.pkl.bak
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ── 10. CI / CD & Docker ──
+.docker/
+.jenkins/
