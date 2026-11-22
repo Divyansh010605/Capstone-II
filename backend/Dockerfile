@@ -8,9 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Copy requirements & install dependencies (using CPU PyTorch wheels to avoid downloading 2.5GB+ unnecessary CUDA wheels in container)
 COPY backend/requirements.txt /workspace/backend/requirements.txt
-RUN pip install --no-cache-dir -r /workspace/backend/requirements.txt
+RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r /workspace/backend/requirements.txt
 
 # Download NLTK data
 RUN python -c "import nltk; nltk.download('vader_lexicon', quiet=True)"

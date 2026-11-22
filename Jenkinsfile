@@ -48,7 +48,7 @@ pipeline {
                     script {
                         if (isUnix()) {
                             sh '''
-                                if [ ! -d "node_modules" ]; then
+                                if [ ! -f "node_modules/.bin/vite" ]; then
                                     echo "Installing dependencies..."
                                     npm install --prefer-offline --no-audit
                                 fi
@@ -57,7 +57,7 @@ pipeline {
                         } else {
                             bat '''
                                 @echo off
-                                if not exist "node_modules" (
+                                if not exist "node_modules\\.bin\\vite.cmd" (
                                     echo Installing frontend dependencies...
                                     call npm install --prefer-offline --no-audit
                                 )
