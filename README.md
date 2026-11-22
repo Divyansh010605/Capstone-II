@@ -13,7 +13,7 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ```text
                                ┌──────────────────────────────────────────────┐
@@ -52,9 +52,9 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
 
 ---
 
-## 🌟 Key Functional Pillars
+## Key Functional Pillars
 
-### 1. 🤖 Deep Learning Stock Trend Prediction
+### 1. Deep Learning Stock Trend Prediction
 * **Multi-Model Architecture**:
   * **LSTM**: 2-layer stacked Long Short-Term Memory capturing sequential price patterns and momentum.
   * **GRU**: 2-layer Gated Recurrent Unit optimizing memory efficiency and mitigating vanishing gradients.
@@ -70,14 +70,14 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
 * **Empirical Statistical Calibration**: Residual quantile modeling for authentic **95% Confidence Intervals** (`lower_bound` / `upper_bound`).
 * **Trend & Evaluation Output**: Classifies trajectories into **Bullish**, **Bearish**, or **Sideways** with walk-forward backtest metrics (MAE, RMSE, MAPE, Directional Accuracy %).
 
-### 2. 🛡️ Quantitative Risk Profiler
+### 2. Quantitative Risk Profiler
 * **Monte Carlo Stochastic Simulation**: Simulates **10,000 Geometric Brownian Motion (GBM) paths** to capture probability distributions of tail risk.
 * **Value at Risk (VaR)**: Parametric, Historical, and Monte Carlo VaR at 95% and 99% confidence intervals.
 * **Conditional Value at Risk (CVaR / Expected Shortfall)**: Sub-additive coherent measure quantifying average losses in extreme tail crash scenarios.
 * **Risk-Adjusted Performance**: Annualized Volatility ($\sigma \times \sqrt{252}$), Sharpe Ratio (4.0% risk-free rate benchmark), Sortino Ratio (downside risk), and Maximum Drawdown (MDD).
 * **Multi-Asset Portfolio Covariance**: Generates full variance-covariance matrix to calculate portfolio volatility and quantify the mathematical **Diversification Benefit %**.
 
-### 3. 🔐 Enterprise Authentication & Recovery
+### 3. Enterprise Authentication & Recovery
 * **Dedicated Initial Auth Landing**: Clean, responsive greeting screen ([AuthPage.jsx](frontend/src/components/AuthPage.jsx)) for unauthenticated visitors.
 * **Sign In & Register**: Username/Email login, password confirmation validation, and visibility eye toggles.
 * **Two-Step Email OTP Password Reset**:
@@ -89,23 +89,23 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
 * **Guest Exploration**: One-click "Explore as Guest" option to preview live terminal features without signing up.
 * **Instant Session Logout**: Synchronously clears all authentication tokens (`alpha_jwt_token`, `token`, `user`, etc.) and immediately redirects to `AuthPage` without requiring a browser refresh.
 
-### 4. 📈 High-DPI Responsive Canvas & Error Resilience
+### 4. High-DPI Responsive Canvas & Error Resilience
 * **High-DPI (`window.devicePixelRatio`) Scaling**: Both [CandlestickChart.jsx](frontend/src/components/CandlestickChart.jsx) and [PredictionPanel.jsx](frontend/src/components/PredictionPanel.jsx) apply pixel-ratio scaling and 2D context transforms so charts render ultra-sharp on Retina / 4K displays.
 * **Fluid Resize Observers**: Embedded `ResizeObserver` monitors container width and dynamically recalculates dimensions and scales upon viewport change or tab switching without page reload.
 * **API Error Handling & Retry UI**: [StockDashboard.jsx](frontend/src/components/StockDashboard.jsx) and [PredictionPanel.jsx](frontend/src/components/PredictionPanel.jsx) catch network and rate-limit errors and render user-friendly error cards with a **"Retry"** action instead of remaining stuck on infinite loading spinners.
 
-### 5. 💼 Virtual Portfolio & Live Watchlist
+### 5. Virtual Portfolio & Live Watchlist
 * **Mark-to-Market Valuation**: Track virtual cash, positions, cost basis, unrealized P&L ($ and %), and multi-asset allocation distributions.
 * **Trade Outlay Calculator**: Live estimated purchase cost calculator when adding positions.
 * **Real-Time Watchlist**: Modal with ticker search, price tracking, and instantaneous add/remove.
 
-### 6. 📰 Financial News NLP Sentiment
+### 6. Financial News NLP Sentiment
 * Evaluates recent market headlines using financial-domain augmented lexicon scoring (VADER NLP).
 * Outputs sentiment classification (Positive / Neutral / Negative) and a 0–100 Sentiment Polarity Index.
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Domain | Technologies |
 |---|---|
@@ -122,7 +122,7 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
 
 ---
 
-## 📦 REST API Endpoints
+## REST API Endpoints
 
 ### Authentication & Password Reset
 | Method | Endpoint | Description |
@@ -163,7 +163,7 @@ Interactive OpenAPI documentation is live at **`http://localhost:8000/docs`**.
 
 ---
 
-## 🏃 Quickstart: Running Locally
+## Quickstart: Running Locally
 
 ### Option 1: Docker Compose (Recommended)
 
@@ -218,7 +218,7 @@ Open **`http://localhost:5173`** in your browser.
 
 ---
 
-## 🧪 Automated Testing
+## Automated Testing
 
 Run the complete test suite across authentication, OTP password reset, OAuth, risk analytics, and PyTorch AI engine:
 
@@ -236,7 +236,7 @@ python -m pytest backend/tests -v
 
 ---
 
-## 🔄 Jenkins CI/CD Automation
+## Jenkins CI/CD Automation
 
 The repository includes a production-grade [Jenkinsfile](Jenkinsfile) configured for automated continuous integration:
 * **Triggering**: Configured with `pollSCM('* * * * *')` to automatically trigger builds on every new Git commit.
@@ -249,6 +249,6 @@ The repository includes a production-grade [Jenkinsfile](Jenkinsfile) configured
 
 ---
 
-## ⚠️ Financial Disclaimer
+## Financial Disclaimer
 
 All stock market price forecasts, directional trend predictions, quantitative risk evaluations, and sentiment scores produced by this software are experimental statistical outputs intended strictly for research and educational demonstrations. **They do not constitute financial advice, investment recommendations, or guarantees of profit.**
