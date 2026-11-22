@@ -128,6 +128,7 @@ graph TD
 
 ```text
 Capstone-II/
+├── Jenkinsfile                  # CI/CD pipeline automation (build, test, deploy)
 ├── ai_engine/                   # PyTorch AI Prediction & Feature Engineering
 │   ├── features/
 │   │   └── technical_indicators.py  # SMA, EMA, MACD, RSI, Bollinger Bands, ATR
@@ -140,7 +141,7 @@ Capstone-II/
 │   │   └── transformer_model.py     # TimeSeriesTransformer with multi-head attention
 │   ├── preprocessing/
 │   │   └── pipeline.py              # MinMaxScaler normalization & sliding window generation
-│   ├── saved_models/                # Pre-trained PyTorch weight checkpoints (*.pt)
+│   ├── saved_models/                # Pre-trained PyTorch checkpoints (AAPL, NVDA, TSLA, TEST_SHORT)
 │   └── training/
 │       └── trainer.py               # Early stopping, MSE training loop, checkpointing
 │
@@ -270,4 +271,10 @@ Capstone-II/
 3. **Resilience & Fallbacks**:
    - Backend services run in hybrid mode: full persistence in MongoDB if connected, graceful automatic fallback to in-memory dictionary stores if MongoDB is offline.
    - Frontend [`api.js`](file:///D:/Project/Capstone-II/frontend/src/services/api.js) automatically provides mock data if the backend is booting, ensuring the UI never crashes.
+4. **Frontend Stability & Canvas Redraw Lifecycle**:
+   - **`ResizeObserver` on Canvas Containers**: Both [`CandlestickChart.jsx`](file:///D:/Project/Capstone-II/frontend/src/components/CandlestickChart.jsx) and [`PredictionPanel.jsx`](file:///D:/Project/Capstone-II/frontend/src/components/PredictionPanel.jsx) attach a `ResizeObserver` to their outer container elements in addition to `window.resize`. This guarantees sharp, properly proportioned chart redraws when toggling between tabs without needing a window resize event.
+   - **Defensive API Data Parsing & Null Safety**: All numeric properties rendered with `.toFixed(2)` or `.toLocaleString()` are wrapped in nullish coalescing checks `Number(val || 0)` or guarded to prevent `TypeError: Cannot read properties of undefined` on partial or pending API payloads.
+   - **Safe Watchlist State Normalization**: In [`App.jsx`](file:///D:/Project/Capstone-II/frontend/src/App.jsx) and [`WatchlistModal.jsx`](file:///D:/Project/Capstone-II/frontend/src/components/WatchlistModal.jsx), incoming data is normalized via `normalizeWatchlist` so that both string primitives (`List[str]` from `POST/DELETE /watchlist`) and structured `StockInfo` objects are handled uniformly without crashing modal displays.
+   - **Division-by-Zero Protection**: Calculation of percentage returns in the stock quick-stats strip, crosshair overlays, risk metrics, and ticker price drift guard against zero denominators `(prev.close > 0 ? ... : '0.00')`.
+
 
