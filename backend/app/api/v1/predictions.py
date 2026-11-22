@@ -6,7 +6,7 @@ Computes calibrated confidence intervals, trend classification, and backtest eva
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query, Depends
 from backend.app.schemas.prediction import PredictionResponse
-from backend.app.api.deps import market_service, prediction_engine
+from backend.app.api.deps import market_service, prediction_service
 from backend.app.core.database import get_database
 
 router = APIRouter(prefix="/predictions", tags=["AI Predictions"])
@@ -45,7 +45,7 @@ async def generate_stock_predictions(
         # Fetch 2 years of daily data for rich training & evaluation
         df_hist = market_service.fetch_historical_ohlcv(sym, period="2y", interval="1d")
 
-        result = prediction_engine.generate_predictions(
+        result = prediction_service.generate_predictions(
             symbol=sym,
             df_raw=df_hist,
             horizon=horizon,

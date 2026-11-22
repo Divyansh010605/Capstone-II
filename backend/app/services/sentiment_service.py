@@ -4,7 +4,7 @@ Aggregates financial news via yfinance, applies financial NLP sentiment scoring,
 and generates stock-specific sentiment breakdown, scores, and bullish/bearish indicators.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 from datetime import datetime, timezone
 import re
 try:

@@ -10,7 +10,7 @@ Implements:
 - Risk Categorization (Low, Medium, High) with documented financial assumptions.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -79,7 +79,6 @@ class RiskAnalysisService:
 
             # C. Monte Carlo VaR (Geometric Brownian Motion)
             current_p = float(clean_prices.iloc[-1])
-            dt = 1.0 / self.trading_days_per_year
             # Vectorized GBM random walks for 1-day horizon
             rand_shocks = np.random.normal(0, 1, mc_simulations)
             sim_prices = current_p * np.exp((daily_mean - 0.5 * (daily_std ** 2)) * 1.0 + daily_std * np.sqrt(1.0) * rand_shocks)

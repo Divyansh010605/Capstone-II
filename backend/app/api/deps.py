@@ -12,7 +12,7 @@ from backend.app.services.market_data import MarketDataService
 from backend.app.services.risk_service import RiskAnalysisService
 from backend.app.services.sentiment_service import SentimentAnalysisService
 from backend.app.services.portfolio_service import PortfolioService
-from ai_engine.inference.predictor import StockPredictorEngine
+from backend.app.services.prediction_service import PredictionService
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/auth/login",
@@ -24,7 +24,8 @@ market_service = MarketDataService()
 risk_service = RiskAnalysisService()
 sentiment_service = SentimentAnalysisService()
 portfolio_service = PortfolioService(market_service, risk_service)
-prediction_engine = StockPredictorEngine(lookback_window=60)
+prediction_service = PredictionService(market_service=market_service)
+prediction_engine = prediction_service
 
 # In-memory users store for tests or standalone operation
 users_db: Dict[str, Dict[str, Any]] = {

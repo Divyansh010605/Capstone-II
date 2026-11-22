@@ -4,14 +4,11 @@ Password Reset with OTP Verification, and OAuth (Google & GitHub).
 """
 
 from datetime import datetime, timezone
-from typing import Optional
 import uuid
 import re
 from fastapi import APIRouter, HTTPException, status, Depends, Request
-from fastapi.security import OAuth2PasswordRequestForm
 from backend.app.schemas.user import (
     UserCreate,
-    UserLogin,
     UserOut,
     TokenResponse,
     ForgotPasswordRequest,

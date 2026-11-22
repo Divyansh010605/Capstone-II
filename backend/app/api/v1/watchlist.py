@@ -3,7 +3,7 @@ Watchlist Management Endpoints: Quick Tracking & Real-Time Monitoring.
 """
 
 from typing import List
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends
 from backend.app.schemas.stock import StockInfo
 from backend.app.schemas.portfolio import WatchlistActionRequest
 from backend.app.api.deps import portfolio_service, get_current_user

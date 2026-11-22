@@ -31,11 +31,25 @@ class EmailOTPService:
         """Generate a cryptographically sound numeric OTP."""
         return "".join([str(random.SystemRandom().randint(0, 9)) for _ in range(length)])
 
+    def _purge_expired_otps(self):
+        """Purge all expired entries from _otp_cache where datetime.utcnow() > entry['expires_at']."""
+        now_naive = datetime.utcnow()
+        now_utc = datetime.now(timezone.utc)
+        expired_emails = []
+        for email, entry in list(_otp_cache.items()):
+            exp = entry.get("expires_at")
+            if exp:
+                if (exp.tzinfo is not None and now_utc > exp) or (exp.tzinfo is None and now_naive > exp):
+                    expired_emails.append(email)
+        for email in expired_emails:
+            _otp_cache.pop(email, None)
+
     async def create_and_send_otp(self, email: str, db=None) -> Tuple[bool, str, Optional[str]]:
         """
         Creates an OTP, stores it in cache & database, and dispatches via SMTP or dev logger.
         Returns: (success: bool, message: str, dev_otp: Optional[str])
         """
+        self._purge_expired_otps()
         normalized_email = email.strip().lower()
         otp = self.generate_otp(6)
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=self.otp_expiry_minutes)
@@ -122,6 +136,7 @@ class EmailOTPService:
 
     async def verify_otp(self, email: str, entered_otp: str, db=None) -> Tuple[bool, str]:
         """Verify the entered OTP against in-memory cache and MongoDB."""
+        self._purge_expired_otps()
         normalized_email = email.strip().lower()
         clean_otp = entered_otp.strip()
 

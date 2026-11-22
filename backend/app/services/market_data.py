@@ -4,6 +4,7 @@ Fetches live & historical OHLCV data via yfinance with caching, sanitization, an
 Stores records in MongoDB and computes technical indicators.
 """
 
+import time
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta, timezone
 import pandas as pd
@@ -18,10 +19,11 @@ from ai_engine.features.technical_indicators import compute_technical_indicators
 
 
 class MarketDataService:
-    def __init__(self, db_client=None):
+    def __init__(self, db_client=None, cache_ttl_seconds: int = 60):
         self.db_client = db_client
         self._memory_cache: Dict[str, Dict[str, Any]] = {}
-        self._cache_ttl_seconds = 300  # 5 minutes cache
+        self._info_cache: Dict[str, Dict[str, Any]] = {}
+        self._cache_ttl_seconds = cache_ttl_seconds  # 60 seconds TTL cache
 
         # Popular default universe for instant discovery
         self.popular_stocks = [
@@ -42,54 +44,76 @@ class MarketDataService:
         return self.popular_stocks
 
     def fetch_stock_info(self, symbol: str) -> Dict[str, Any]:
-        """Fetch general stock profile and latest metrics."""
+        """Fetch general stock profile and latest metrics with in-memory TTL caching and retry."""
         symbol = symbol.upper()
+        now = datetime.now(timezone.utc)
 
-        try:
-            if yf is None:
-                raise ImportError("yfinance not installed")
-            ticker = yf.Ticker(symbol)
-            info = ticker.info or {}
-            current_price = (
-                info.get("currentPrice")
-                or info.get("regularMarketPrice")
-                or info.get("previousClose")
-                or 150.0
-            )
+        # 1. Check in-memory cache
+        if symbol in self._info_cache:
+            entry = self._info_cache[symbol]
+            if (now - entry["timestamp"]).total_seconds() < self._cache_ttl_seconds:
+                return entry["data"].copy()
 
-            result = {
-                "symbol": symbol,
-                "name": info.get("shortName") or info.get("longName") or f"{symbol} Corporation",
-                "sector": info.get("sector", "General Equities"),
-                "industry": info.get("industry", "Market Index"),
-                "currency": info.get("currency", "USD"),
-                "current_price": float(current_price),
-                "previous_close": float(info.get("previousClose") or current_price),
-                "market_cap": info.get("marketCap", 0),
-                "pe_ratio": round(float(info.get("trailingPE", 0.0) or 0.0), 2),
-                "fifty_two_week_high": float(info.get("fiftyTwoWeekHigh") or (current_price * 1.15)),
-                "fifty_two_week_low": float(info.get("fiftyTwoWeekLow") or (current_price * 0.85)),
-                "summary": info.get("longBusinessSummary", f"Financial asset tracker for {symbol}"),
-                "last_updated": datetime.now(timezone.utc).isoformat(),
-            }
-            return result
-        except Exception:
-            # Fallback metadata if live call is choked or yfinance is unavailable
-            return {
-                "symbol": symbol,
-                "name": f"{symbol} Asset",
-                "sector": "Equities",
-                "industry": "Market Asset",
-                "currency": "USD",
-                "current_price": 150.0,
-                "previous_close": 149.5,
-                "market_cap": 1000000000,
-                "pe_ratio": 20.0,
-                "fifty_two_week_high": 180.0,
-                "fifty_two_week_low": 120.0,
-                "summary": f"Market analysis tracking for {symbol}",
-                "last_updated": datetime.now(timezone.utc).isoformat(),
-            }
+        # 2. Fetch with exponential backoff retry to guard against 429 rate limits
+        max_retries = 3
+        last_exception = None
+
+        for attempt in range(max_retries):
+            try:
+                if yf is None:
+                    raise ImportError("yfinance not installed")
+                ticker = yf.Ticker(symbol)
+                info = ticker.info or {}
+                current_price = (
+                    info.get("currentPrice")
+                    or info.get("regularMarketPrice")
+                    or info.get("previousClose")
+                    or 150.0
+                )
+
+                result = {
+                    "symbol": symbol,
+                    "name": info.get("shortName") or info.get("longName") or f"{symbol} Corporation",
+                    "sector": info.get("sector", "General Equities"),
+                    "industry": info.get("industry", "Market Index"),
+                    "currency": info.get("currency", "USD"),
+                    "current_price": float(current_price),
+                    "previous_close": float(info.get("previousClose") or current_price),
+                    "market_cap": info.get("marketCap", 0),
+                    "pe_ratio": round(float(info.get("trailingPE", 0.0) or 0.0), 2),
+                    "fifty_two_week_high": float(info.get("fiftyTwoWeekHigh") or (current_price * 1.15)),
+                    "fifty_two_week_low": float(info.get("fiftyTwoWeekLow") or (current_price * 0.85)),
+                    "summary": info.get("longBusinessSummary", f"Financial asset tracker for {symbol}"),
+                    "last_updated": now.isoformat(),
+                }
+
+                # Cache successful response
+                self._info_cache[symbol] = {"timestamp": now, "data": result.copy()}
+                return result
+
+            except Exception as e:
+                last_exception = e
+                if attempt < max_retries - 1:
+                    time.sleep(0.5 * (2 ** attempt))
+
+        # Fallback metadata if live call is choked or yfinance is unavailable
+        fallback = {
+            "symbol": symbol,
+            "name": f"{symbol} Asset",
+            "sector": "Equities",
+            "industry": "Market Asset",
+            "currency": "USD",
+            "current_price": 150.0,
+            "previous_close": 149.5,
+            "market_cap": 1000000000,
+            "pe_ratio": 20.0,
+            "fifty_two_week_high": 180.0,
+            "fifty_two_week_low": 120.0,
+            "summary": f"Market analysis tracking for {symbol}",
+            "last_updated": now.isoformat(),
+        }
+        self._info_cache[symbol] = {"timestamp": now, "data": fallback.copy()}
+        return fallback
 
     def fetch_historical_ohlcv(
         self,
@@ -99,8 +123,8 @@ class MarketDataService:
         force_refresh: bool = False,
     ) -> pd.DataFrame:
         """
-        Fetch cleaned OHLCV DataFrame for a symbol.
-        Checks in-memory cache, then queries yfinance, cleans NaNs, and checks integrity.
+        Fetch cleaned OHLCV DataFrame for a symbol with in-memory TTL caching and retry.
+        Checks in-memory cache, queries yfinance with exponential backoff, cleans NaNs, and checks integrity.
         """
         symbol = symbol.upper()
         cache_key = f"{symbol}_{period}_{interval}"
@@ -112,18 +136,26 @@ class MarketDataService:
             if (now - entry["timestamp"]).total_seconds() < self._cache_ttl_seconds:
                 return entry["data"].copy()
 
-        # 2. Fetch from yfinance
+        # 2. Fetch from yfinance with exponential backoff retry
         df = None
         if yf is not None:
-            try:
-                ticker = yf.Ticker(symbol)
-                df = ticker.history(period=period, interval=interval)
-                if df is not None and not df.empty:
-                    # Flatten MultiIndex columns if present
-                    if isinstance(df.columns, pd.MultiIndex):
-                        df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
-            except Exception:
-                df = None
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    ticker = yf.Ticker(symbol)
+                    df = ticker.history(period=period, interval=interval)
+                    if df is not None and not df.empty:
+                        # Flatten MultiIndex columns if present
+                        if isinstance(df.columns, pd.MultiIndex):
+                            df.columns = [col[0] if isinstance(col, tuple) else col for col in df.columns]
+                        break
+                    if attempt < max_retries - 1:
+                        time.sleep(0.5 * (2 ** attempt))
+                except Exception:
+                    if attempt < max_retries - 1:
+                        time.sleep(0.5 * (2 ** attempt))
+                    else:
+                        df = None
 
         if df is None or df.empty or len(df) < 5:
             df = self._generate_fallback_history(symbol, period)

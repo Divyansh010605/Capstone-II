@@ -3,12 +3,10 @@ Standalone AI Inference Engine Service API.
 Serves PyTorch LSTM, GRU, Transformer, and Stacking Ensemble predictions over HTTP.
 """
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Any, List
 import pandas as pd
 from ai_engine.inference.predictor import StockPredictorEngine
-from ai_engine.features.technical_indicators import compute_technical_indicators
 try:
     import yfinance as yf
 except ImportError:
