@@ -9,7 +9,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.0-47A248?logo=mongodb&logoColor=white)](https://mongodb.com)
 [![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-D24939?logo=jenkins&logoColor=white)](https://jenkins.io)
 
-An institutional-grade, full-stack quantitative trading analytics and AI forecasting platform. It forecasts multi-horizon stock price trajectories, classifies directional market trends, performs comprehensive tail risk modeling (**Monte Carlo**, **VaR**, **CVaR**, **MDD**), scores real-time financial news sentiment using NLP, and provides a cyber-fintech trading terminal with complete JWT/OAuth authentication and OTP password recovery.
+An institutional-grade, full-stack quantitative trading analytics and AI forecasting platform. It forecasts multi-horizon stock price trajectories, classifies directional market trends, performs comprehensive tail risk modeling (**Monte Carlo**, **VaR**, **CVaR**, **MDD**), scores real-time financial news sentiment using NLP, and provides a cyber-fintech trading terminal with complete JWT/OAuth authentication, OTP password recovery, and high-DPI responsive canvas visualization.
 
 ---
 
@@ -36,10 +36,18 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
                    ┌───────────────────┴──┐           │           ┌──┴───────────────────┐
                    ▼                      ▼           ▼           ▼                      ▼
         ┌───────────────────────┐  ┌─────────────┐ ┌───────────┐ ┌───────────────────┐ ┌───────────────┐
-        │   AI Inference Engine │  │ Market Data │ │ Email OTP │ │ MongoDB Database  │ │ NLP Sentiment │
-        │  (LSTM, GRU, Xformer, │  │   Service   │ │  Service  │ │ (Users, Sessions, │ │ (Domain VADER │
-        │   Stacking Ensemble)  │  │  (yfinance) │ │  (SMTP)   │ │  Portfolios, Risk)│ │  News Scorer) │
-        └───────────────────────┘  └─────────────┘ └───────────┘ └───────────────────┘ └───────────────┘
+        │   PredictionService   │  │ Market Data │ │ Email OTP │ │ MongoDB Database  │ │ NLP Sentiment │
+        │ (Remote AI Microsvc   │  │   Service   │ │  Service  │ │ (Users, Sessions, │ │ (Domain VADER │
+        │  via AI_ENGINE_URL or │  │ (TTL Cache, │ │ (Auto-OTP │ │  Portfolios, Risk)│ │  News Scorer) │
+        │  In-Process Fallback) │  │ Backoff)    │ │  Purge)   │ │                   │ │               │
+        └──────────┬────────────┘  └─────────────┘ └───────────┘ └───────────────────┘ └───────────────┘
+                   │
+                   ▼
+        ┌───────────────────────┐
+        │   PyTorch AI Engine   │
+        │  (LSTM, GRU, Xformer, │
+        │   Stacking Ensemble)  │
+        └───────────────────────┘
 ```
 
 ---
@@ -48,14 +56,19 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
 
 ### 1. 🤖 Deep Learning Stock Trend Prediction
 * **Multi-Model Architecture**:
-  * **LSTM**: Captures long-term sequential price patterns and momentum.
-  * **GRU**: Accelerated gated recurrence minimizing vanishing gradient risks.
-  * **Time-Series Transformer**: Multi-Head Self-Attention modeling cross-timestep correlations.
-  * **Stacking Ensemble**: Ridge meta-regressor weighting base models to reduce variance and out-of-sample error.
-* **Leak-Free Sequence Pipeline**: 60-day chronological sliding window with isolated MinMax scaling.
-* **Feature Extraction**: Enriched with 8 quantitative indicators: SMA (20, 50, 200), EMA (12, 26), RSI-14, MACD, Bollinger Bands, ATR, Return Momentum, and Volume Oscillators.
-* **Empirical Statistical Calibration**: Residual quantile modeling for authentic **95% Confidence Intervals**.
-* **Trend & Evaluation Output**: Classifies trajectories into **Bullish**, **Bearish**, or **Sideways** with backtest metrics (MAE, RMSE, MAPE, Directional Accuracy).
+  * **LSTM**: 2-layer stacked Long Short-Term Memory capturing sequential price patterns and momentum.
+  * **GRU**: 2-layer Gated Recurrent Unit optimizing memory efficiency and mitigating vanishing gradients.
+  * **Time-Series Transformer**: Multi-head self-attention with learned positional encoding for cross-timestep correlation.
+  * **Stacking Ensemble**: Dynamically weighted ensemble using out-of-sample inverse-MSE calibration with fallback bounds.
+* **Leak-Free Sequence Pipeline**: 60-day chronological sliding window with isolated MinMaxScaler normalization.
+* **Feature Extraction**: 18-feature schema with quantitative indicators: SMA (20, 50, 200), EMA (12, 26), RSI-14, MACD & Signal, Bollinger Bands (Upper, Lower), ATR, Return Momentum, and Volume Oscillators.
+* **Robust Model Inference & Ingestion**:
+  * Dynamic tensor input compatibility supporting both 2D `(batch, features)` and 3D `(batch, seq_len, features)` representations.
+  * Native PyTorch `float32` type enforcement to eliminate dtype mismatch runtime errors.
+  * Checkpoint-driven weight restoration (`load_weights` / `load_checkpoint`) across arbitrary stock symbols.
+  * Non-negative price floor calibration ensuring realistic price bounds.
+* **Empirical Statistical Calibration**: Residual quantile modeling for authentic **95% Confidence Intervals** (`lower_bound` / `upper_bound`).
+* **Trend & Evaluation Output**: Classifies trajectories into **Bullish**, **Bearish**, or **Sideways** with walk-forward backtest metrics (MAE, RMSE, MAPE, Directional Accuracy %).
 
 ### 2. 🛡️ Quantitative Risk Profiler
 * **Monte Carlo Stochastic Simulation**: Simulates **10,000 Geometric Brownian Motion (GBM) paths** to capture probability distributions of tail risk.
@@ -65,21 +78,28 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
 * **Multi-Asset Portfolio Covariance**: Generates full variance-covariance matrix to calculate portfolio volatility and quantify the mathematical **Diversification Benefit %**.
 
 ### 3. 🔐 Enterprise Authentication & Recovery
-* **Dedicated Initial Auth Landing**: Clean, responsive greeting screen ([AuthPage.jsx](file:///F:/Capstone-II/frontend/src/components/AuthPage.jsx)) greeting unauthenticated visitors.
+* **Dedicated Initial Auth Landing**: Clean, responsive greeting screen ([AuthPage.jsx](frontend/src/components/AuthPage.jsx)) for unauthenticated visitors.
 * **Sign In & Register**: Username/Email login, password confirmation validation, and visibility eye toggles.
 * **Two-Step Email OTP Password Reset**:
   * **Step 1**: Dispatches a cryptographically secure 6-digit verification code to the registered email address.
   * **Step 2**: Validates the OTP, enforces password matching, hashes the new password with bcrypt, and invalidates used codes.
+  * **Memory Purge Protection**: Automatically purges all expired verification codes on every generation and verification cycle to prevent memory leaks.
   * Supports SMTP delivery with automatic development-mode console fallback.
 * **Google & GitHub OAuth**: Single-sign-on (SSO) endpoints with automatic account provisioning.
 * **Guest Exploration**: One-click "Explore as Guest" option to preview live terminal features without signing up.
+* **Instant Session Logout**: Synchronously clears all authentication tokens (`alpha_jwt_token`, `token`, `user`, etc.) and immediately redirects to `AuthPage` without requiring a browser refresh.
 
-### 4. 💼 Virtual Portfolio & Live Watchlist
+### 4. 📈 High-DPI Responsive Canvas & Error Resilience
+* **High-DPI (`window.devicePixelRatio`) Scaling**: Both [CandlestickChart.jsx](frontend/src/components/CandlestickChart.jsx) and [PredictionPanel.jsx](frontend/src/components/PredictionPanel.jsx) apply pixel-ratio scaling and 2D context transforms so charts render ultra-sharp on Retina / 4K displays.
+* **Fluid Resize Observers**: Embedded `ResizeObserver` monitors container width and dynamically recalculates dimensions and scales upon viewport change or tab switching without page reload.
+* **API Error Handling & Retry UI**: [StockDashboard.jsx](frontend/src/components/StockDashboard.jsx) and [PredictionPanel.jsx](frontend/src/components/PredictionPanel.jsx) catch network and rate-limit errors and render user-friendly error cards with a **"Retry"** action instead of remaining stuck on infinite loading spinners.
+
+### 5. 💼 Virtual Portfolio & Live Watchlist
 * **Mark-to-Market Valuation**: Track virtual cash, positions, cost basis, unrealized P&L ($ and %), and multi-asset allocation distributions.
 * **Trade Outlay Calculator**: Live estimated purchase cost calculator when adding positions.
 * **Real-Time Watchlist**: Modal with ticker search, price tracking, and instantaneous add/remove.
 
-### 5. 📰 Financial News NLP Sentiment
+### 6. 📰 Financial News NLP Sentiment
 * Evaluates recent market headlines using financial-domain augmented lexicon scoring (VADER NLP).
 * Outputs sentiment classification (Positive / Neutral / Negative) and a 0–100 Sentiment Polarity Index.
 
@@ -90,11 +110,12 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
 | Domain | Technologies |
 |---|---|
 | **Backend API** | Python 3.11, FastAPI, Uvicorn, Pydantic v2, Python-Dotenv |
-| **Deep Learning & ML** | PyTorch, Scikit-learn, SciPy, NumPy, Pandas |
-| **Frontend UI** | React 18, Vite 5.4, TailwindCSS v4, Lucide Icons, HTML5 Canvas |
+| **Deep Learning & ML** | PyTorch 2.2+, Scikit-learn, SciPy, NumPy, Pandas |
+| **Prediction Routing** | `PredictionService` (Remote Microservice via `AI_ENGINE_URL` + Seamless In-Process Fallback) |
+| **Frontend UI** | React 18, Vite 5.4, TailwindCSS v4, Lucide Icons, High-DPI HTML5 Canvas |
 | **Database & ODM** | MongoDB 6.0, Motor (Async Driver), In-Memory Mock Fallback |
-| **Market Data** | Yahoo Finance (`yfinance`) with offline data generation fallbacks |
-| **Security & Auth** | JWT Bearer (HS256), Passlib (Bcrypt & PBKDF2), OAuth 2.0, SMTP Email OTP |
+| **Market Data** | Yahoo Finance (`yfinance`) with 60s in-memory TTL cache, exponential backoff, and synthetic fallback |
+| **Security & Auth** | JWT Bearer (HS256), Passlib (Bcrypt & PBKDF2), OAuth 2.0, SMTP Email OTP with auto-purge |
 | **Containerization** | Docker, Docker Compose, Nginx Alpine |
 | **CI / CD** | Jenkinsfile (Pipeline with SCM Polling every minute) |
 | **Testing** | Pytest, Pytest-Asyncio, HTTPX |
@@ -181,7 +202,13 @@ pip install -r backend/requirements.txt
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-#### 2. Frontend React / Vite Client
+#### 2. AI Engine Microservice (Optional Remote Mode)
+```bash
+# If AI_ENGINE_URL=http://localhost:8001 is configured in .env:
+uvicorn ai_engine.api:app --host 0.0.0.0 --port 8001 --reload
+```
+
+#### 3. Frontend React / Vite Client
 ```bash
 cd frontend
 npm install
@@ -193,24 +220,25 @@ Open **`http://localhost:5173`** in your browser.
 
 ## 🧪 Automated Testing
 
-Run the complete test suite across authentication, OTP password reset, OAuth, risk analytics, and API endpoints:
+Run the complete test suite across authentication, OTP password reset, OAuth, risk analytics, and PyTorch AI engine:
 
 ```bash
 # Execute full test suite
 python -m pytest backend/tests -v
 ```
 
-**Verified Test Suites (45/45 Passing)**:
+**Verified Test Suites**:
 * `backend/tests/test_auth.py` (Registration, login, password mismatch, OTP reset, OAuth)
 * `backend/tests/test_portfolio.py` (Portfolio CRUD, positions, watchlist)
 * `backend/tests/test_risk.py` (GBM simulation, VaR/CVaR, Sharpe ratio)
+* `backend/tests/test_ai_engine_verification.py` (PyTorch model loading, tensor compatibility, ensemble calibration)
 * `backend/tests/test_all_endpoints_comprehensive.py` (End-to-end endpoint regression suite)
 
 ---
 
 ## 🔄 Jenkins CI/CD Automation
 
-The repository includes a production-grade [Jenkinsfile](file:///F:/Capstone-II/Jenkinsfile) configured for automated continuous integration:
+The repository includes a production-grade [Jenkinsfile](Jenkinsfile) configured for automated continuous integration:
 * **Triggering**: Configured with `pollSCM('* * * * *')` to automatically trigger builds on every new Git commit.
 * **Cross-Platform Compatibility**: Automatically detects Unix vs Windows environments and sets explicit user environment paths for Python, pytest, Node.js, and Docker.
 * **Pipeline Stages**:
