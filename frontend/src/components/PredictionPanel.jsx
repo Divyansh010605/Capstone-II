@@ -11,6 +11,7 @@ import {
   Target,
   Sparkles,
   Layers,
+  AlertTriangle,
 } from 'lucide-react';
 
 export const PredictionPanel = ({
@@ -21,6 +22,9 @@ export const PredictionPanel = ({
   setSelectedModel,
   onRefresh,
   loading,
+  error,
+  onRetry,
+  symbol = 'AAPL',
 }) => {
   const chartCanvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -204,7 +208,7 @@ export const PredictionPanel = ({
       window.removeEventListener('resize', handleResize);
       if (resizeObserver) resizeObserver.disconnect();
     };
-  }, [renderForecastChart]);
+  }, [renderForecastChart, loading]);
 
   const trend = predictionData?.trend || 'Sideways';
   const returnPct = predictionData?.expected_return_pct || 0;
@@ -362,6 +366,27 @@ export const PredictionPanel = ({
             <div className="h-80 flex flex-col items-center justify-center text-cyan-400 font-mono text-sm gap-3">
               <div className="w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
               <span>Running PyTorch inference across Transformer & Recurrent models...</span>
+            </div>
+          ) : error ? (
+            <div className="h-80 flex flex-col items-center justify-center text-center p-6 space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-lg shadow-rose-500/10">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-white font-mono font-bold text-sm">Failed to Load AI Predictions</h4>
+                <p className="text-xs font-mono text-slate-400 max-w-sm">
+                  {typeof error === 'string' ? error : 'The AI inference service encountered an error or was rate limited. Please retry.'}
+                </p>
+              </div>
+              {(onRetry || onRefresh) && (
+                <button
+                  onClick={onRetry || onRefresh}
+                  className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono transition-colors flex items-center gap-2 shadow-lg shadow-cyan-500/20 active:scale-95"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Retry Prediction
+                </button>
+              )}
             </div>
           ) : forecast.length === 0 ? (
             <div className="h-80 flex flex-col items-center justify-center text-slate-500 font-mono text-sm gap-2">

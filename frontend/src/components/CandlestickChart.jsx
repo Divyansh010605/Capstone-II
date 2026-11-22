@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Layers, Activity, Calendar, BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
+import { Layers, Activity, Calendar, BarChart3, TrendingUp, TrendingDown, AlertTriangle, RefreshCw } from 'lucide-react';
 
-export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => {
+export const CandlestickChart = ({ historyData, symbol, period, setPeriod, error, onRetry }) => {
   const [hoverIndex, setHoverIndex] = useState(null);
   const [showSMA, setShowSMA] = useState(true);
   const [showEMA, setShowEMA] = useState(true);
@@ -405,10 +405,33 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod }) => 
         onMouseLeave={() => setHoverIndex(null)}
       >
         {records.length === 0 ? (
-          <div className="h-96 flex flex-col items-center justify-center text-slate-500 font-mono text-sm gap-2">
-            <Activity className="w-8 h-8 text-cyan-400 animate-spin" />
-            <span>Loading high-resolution OHLCV candlesticks...</span>
-          </div>
+          error ? (
+            <div className="h-96 flex flex-col items-center justify-center text-center p-6 space-y-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shadow-lg shadow-rose-500/10">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-white font-mono font-bold text-sm">Failed to Load OHLCV Market Data</h4>
+                <p className="text-xs font-mono text-slate-400 max-w-sm">
+                  {typeof error === 'string' ? error : 'Backend market data rate limit or connection issue.'}
+                </p>
+              </div>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono transition-colors flex items-center gap-2 shadow-lg shadow-cyan-500/20"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Retry Market Data
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="h-96 flex flex-col items-center justify-center text-slate-500 font-mono text-sm gap-2">
+              <Activity className="w-8 h-8 text-cyan-400 animate-spin" />
+              <span>Loading high-resolution OHLCV candlesticks...</span>
+            </div>
+          )
         ) : (
           <canvas
             ref={canvasRef}

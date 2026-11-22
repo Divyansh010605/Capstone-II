@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { MarketTickerBar } from './components/MarketTickerBar';
 import { CandlestickChart } from './components/CandlestickChart';
+import { StockDashboard } from './components/StockDashboard';
 import { PredictionPanel } from './components/PredictionPanel';
 import { RiskDashboard } from './components/RiskDashboard';
 import { PortfolioManager } from './components/PortfolioManager';
@@ -90,9 +91,11 @@ export function App() {
   const [token, setToken] = useState(localStorage.getItem('alpha_jwt_token') || '');
   const [isGuestMode, setIsGuestMode] = useState(false);
 
-  // Loading indicators
+  // Loading indicators & error states
   const [loading, setLoading] = useState(false);
+  const [stockError, setStockError] = useState(null);
   const [predLoading, setPredLoading] = useState(false);
+  const [predError, setPredError] = useState(null);
 
   // 1. Check Backend Connectivity
   useEffect(() => {
@@ -143,6 +146,7 @@ export function App() {
     let cancelled = false;
     async function loadStockData() {
       setLoading(true);
+      setStockError(null);
       try {
         const [hist, risk, sent] = await Promise.all([
           apiClient.getMarketHistory(selectedSymbol, period),
@@ -156,6 +160,9 @@ export function App() {
         }
       } catch (err) {
         console.error('Stock data error:', err);
+        if (!cancelled) {
+          setStockError(err?.message || 'Failed to fetch market data. The service may be throttled or temporarily offline.');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -169,11 +176,15 @@ export function App() {
     let cancelled = false;
     async function loadPredictions() {
       setPredLoading(true);
+      setPredError(null);
       try {
         const pred = await apiClient.getPredictions(selectedSymbol, selectedHorizon, selectedModel);
         if (!cancelled) setPredictionData(pred);
       } catch (err) {
         console.error('Prediction error:', err);
+        if (!cancelled) {
+          setPredError(err?.message || 'Failed to load AI predictions. Please verify backend service.');
+        }
       } finally {
         if (!cancelled) setPredLoading(false);
       }
@@ -251,14 +262,41 @@ export function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('alpha_jwt_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('auth_token');
     setToken('');
     apiClient.setToken('');
     setUser(null);
     setIsGuestMode(false);
     setIsAuthOpen(false);
+    setPortfolioData(null);
+    setWatchlist([]);
+  };
+
+  const handleRetryStockData = async () => {
+    setLoading(true);
+    setStockError(null);
+    try {
+      const [hist, risk, sent] = await Promise.all([
+        apiClient.getMarketHistory(selectedSymbol, period),
+        apiClient.getRiskMetrics(selectedSymbol),
+        apiClient.getSentiment(selectedSymbol),
+      ]);
+      setHistoryData(hist);
+      setRiskData(risk);
+      setSentimentData(sent);
+    } catch (err) {
+      console.error('Stock retry error:', err);
+      setStockError(err?.message || 'Failed to fetch market data on retry.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRefreshPredictions = async () => {
+    setPredError(null);
     setPredictionData(null);
     setPredLoading(true);
     try {
@@ -266,6 +304,7 @@ export function App() {
       setPredictionData(pred);
     } catch (err) {
       console.error('Refresh error:', err);
+      setPredError(err?.message || 'Failed to refresh AI predictions.');
     } finally {
       setPredLoading(false);
     }
@@ -306,6 +345,7 @@ export function App() {
           onOpenWatchlist={() => setIsWatchlistOpen(true)}
           user={user}
           onOpenAuth={() => setIsAuthOpen(true)}
+          onLogout={handleLogout}
           isBackendOnline={isBackendOnline}
         />
 
@@ -351,11 +391,14 @@ export function App() {
         {/* ── Dynamic Tab Content ── */}
         <main>
           {activeTab === 'technicals' && (
-            <CandlestickChart
+            <StockDashboard
               historyData={historyData}
               symbol={selectedSymbol}
               period={period}
               setPeriod={setPeriod}
+              loading={loading}
+              error={stockError}
+              onRetry={handleRetryStockData}
             />
           )}
 
@@ -368,6 +411,9 @@ export function App() {
               setSelectedModel={setSelectedModel}
               onRefresh={handleRefreshPredictions}
               loading={predLoading}
+              error={predError}
+              onRetry={handleRefreshPredictions}
+              symbol={selectedSymbol}
             />
           )}
 

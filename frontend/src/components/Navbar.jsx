@@ -10,6 +10,7 @@ import {
   User,
   Radio,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 
 export const Navbar = ({
@@ -21,6 +22,7 @@ export const Navbar = ({
   onOpenWatchlist,
   user,
   onOpenAuth,
+  onLogout,
   isBackendOnline,
 }) => {
   const [searchInput, setSearchInput] = useState(selectedSymbol);
@@ -102,6 +104,15 @@ export const Navbar = ({
             >
               <User className="w-4 h-4" />
             </button>
+            {user && onLogout && (
+              <button
+                onClick={onLogout}
+                className="p-2 rounded-lg bg-white/5 border border-rose-500/20 text-rose-400 hover:bg-rose-500/10"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -181,6 +192,16 @@ export const Navbar = ({
               <User className="w-3.5 h-3.5 text-cyan-400" />
               <span>{user ? user.username : 'Sign In / Register'}</span>
             </button>
+
+            {user && onLogout && (
+              <button
+                onClick={onLogout}
+                title="Sign Out"
+                className="btn-secondary text-xs px-2.5 py-2 font-mono flex items-center border-white/10 text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
