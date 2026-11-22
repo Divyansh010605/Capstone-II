@@ -311,6 +311,14 @@ export const PortfolioManager = ({
                 />
               </div>
 
+              {/* Estimated Total Outlay */}
+              <div className="p-3 rounded-xl bg-[#090d16] border border-white/5 flex items-center justify-between text-xs font-mono">
+                <span className="text-slate-400">Estimated Total Cost:</span>
+                <span className="text-cyan-400 font-bold">
+                  ${((parseInt(quantity, 10) || 0) * (parseFloat(buyPrice) || 150.0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
                 <button
                   type="button"
