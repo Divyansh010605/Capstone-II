@@ -192,7 +192,10 @@ export const TopBar = () => {
               <span className="hidden md:inline font-semibold text-xs">{user.username}</span>
             </div>
             <button
-              onClick={logout}
+              onClick={() => {
+                logout();
+                navigate('/auth');
+              }}
               title="Terminate Session / Sign Out"
               className="p-1 text-[#969B91] hover:text-[#E47770] hover:bg-[#202720] transition-colors"
             >

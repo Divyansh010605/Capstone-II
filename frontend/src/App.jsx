@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { TerminalProvider } from './context/TerminalContext';
+import { TerminalProvider, useTerminal } from './context/TerminalContext';
 import { TerminalLayout } from './components/layout/TerminalLayout';
 
 // Application Pages
@@ -15,6 +15,22 @@ import { SentimentPage } from './pages/SentimentPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { SwaggerDocsPage } from './pages/SwaggerDocsPage';
 import { AuthPage } from './pages/AuthPage';
+
+// Route Guards
+const RootRedirect = () => {
+  const { token, isGuestMode } = useTerminal();
+  const hasToken = Boolean(token || (typeof localStorage !== 'undefined' && localStorage.getItem('alpha_jwt_token')));
+  return hasToken || isGuestMode ? <Navigate to="/overview" replace /> : <Navigate to="/auth" replace />;
+};
+
+const RequireAuth = () => {
+  const { token, isGuestMode } = useTerminal();
+  const hasToken = Boolean(token || (typeof localStorage !== 'undefined' && localStorage.getItem('alpha_jwt_token')));
+  if (!hasToken && !isGuestMode) {
+    return <Navigate to="/auth" replace />;
+  }
+  return <TerminalLayout />;
+};
 
 // Global Keyboard Navigation Listener
 const KeyboardShortcutsHandler = () => {
@@ -78,9 +94,11 @@ export function App() {
           {/* Full-Page Auth Gateway */}
           <Route path="/auth" element={<AuthPage />} />
 
-          {/* Persistent Terminal Layout & Workspaces */}
-          <Route path="/" element={<TerminalLayout />}>
-            <Route index element={<Navigate to="/overview" replace />} />
+          {/* Root Path: Automatically sends unauthenticated visitors to /auth */}
+          <Route path="/" element={<RootRedirect />} />
+
+          {/* Protected Terminal Layout & Workspaces */}
+          <Route element={<RequireAuth />}>
             <Route path="overview" element={<OverviewPage />} />
             <Route path="explorer" element={<StockExplorerPage />} />
             <Route path="watchlist" element={<WatchlistPage />} />
@@ -96,7 +114,7 @@ export function App() {
           </Route>
 
           {/* Wildcard Fallback */}
-          <Route path="*" element={<Navigate to="/overview" replace />} />
+          <Route path="*" element={<Navigate to="/auth" replace />} />
         </Routes>
       </TerminalProvider>
     </BrowserRouter>
