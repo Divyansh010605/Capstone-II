@@ -44,6 +44,7 @@ class OAuthLoginRequest(BaseModel):
     name: Optional[str] = None
     avatar_url: Optional[str] = None
     oauth_token: Optional[str] = None
+    code: Optional[str] = None
 
 
 class MessageResponse(BaseModel):

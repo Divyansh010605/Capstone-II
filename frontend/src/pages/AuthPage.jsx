@@ -63,12 +63,68 @@ export const AuthPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [devOtpHint, setDevOtpHint] = useState('');
+  const [oauthConfig, setOauthConfig] = useState({ google_client_id: '', github_client_id: '' });
 
   // UI state
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // 1. Fetch OAuth Config and Handle Incoming OAuth Redirects
+  useEffect(() => {
+    let active = true;
+
+    async function initOAuth() {
+      try {
+        const cfg = await apiClient.getOAuthConfig();
+        if (active && cfg) setOauthConfig(cfg);
+      } catch {
+        // Ignore
+      }
+
+      // Check for Google OAuth hash callback: #access_token=...
+      const hash = window.location.hash;
+      if (hash && hash.includes('access_token=')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const googleToken = params.get('access_token');
+        if (googleToken) {
+          setLoading(true);
+          try {
+            await oauthLogin('google', { oauth_token: googleToken });
+            window.history.replaceState(null, '', window.location.pathname);
+            navigate('/overview');
+            return;
+          } catch (err) {
+            setErrorMsg(err.message || 'Google authentication failed');
+            setLoading(false);
+          }
+        }
+      }
+
+      // Check for GitHub OAuth search query callback: ?code=...
+      const search = window.location.search;
+      if (search && search.includes('code=')) {
+        const params = new URLSearchParams(search);
+        const code = params.get('code');
+        if (code) {
+          setLoading(true);
+          try {
+            await oauthLogin('github', { code });
+            window.history.replaceState(null, '', window.location.pathname);
+            navigate('/overview');
+            return;
+          } catch (err) {
+            setErrorMsg(err.message || 'GitHub authentication failed');
+            setLoading(false);
+          }
+        }
+      }
+    }
+
+    initOAuth();
+    return () => { active = false; };
+  }, [oauthLogin, navigate]);
 
   const clearMessages = () => {
     setErrorMsg('');
@@ -122,6 +178,40 @@ export const AuthPage = () => {
 
   const handleOAuth = async (provider) => {
     clearMessages();
+
+    // 1. Live Google OAuth Redirect with Account Chooser
+    if (provider === 'google') {
+      const clientId = oauthConfig.google_client_id;
+      if (clientId) {
+        const redirectUri = `${window.location.origin}/auth`;
+        const googleAuthUrl =
+          `https://accounts.google.com/o/oauth2/v2/auth?` +
+          `client_id=${encodeURIComponent(clientId)}&` +
+          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+          `response_type=token&` +
+          `scope=${encodeURIComponent('openid email profile')}&` +
+          `prompt=select_account`;
+        window.location.href = googleAuthUrl;
+        return;
+      }
+    }
+
+    // 2. Live GitHub OAuth Redirect
+    if (provider === 'github') {
+      const clientId = oauthConfig.github_client_id;
+      if (clientId) {
+        const redirectUri = `${window.location.origin}/auth`;
+        const githubAuthUrl =
+          `https://github.com/login/oauth/authorize?` +
+          `client_id=${encodeURIComponent(clientId)}&` +
+          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+          `scope=user:email`;
+        window.location.href = githubAuthUrl;
+        return;
+      }
+    }
+
+    // 3. Fallback mock dev login if Client IDs are not yet registered
     setLoading(true);
     try {
       if (oauthLogin) {

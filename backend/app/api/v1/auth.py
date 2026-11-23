@@ -21,6 +21,8 @@ from backend.app.core.security import verify_password, get_password_hash, create
 from backend.app.api.deps import users_db, get_current_user
 from backend.app.core.database import get_database
 from backend.app.services.email_service import email_otp_service
+from backend.app.core.config import settings
+import httpx
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -256,12 +258,22 @@ async def reset_password(req: ResetPasswordRequest, db=Depends(get_database)):
     )
 
 
+@router.get("/oauth/config")
+@router.get("/oauth/config/")
+async def get_oauth_config():
+    """Return configured OAuth Client IDs for client-side redirection."""
+    return {
+        "google_client_id": settings.GOOGLE_CLIENT_ID or "",
+        "github_client_id": settings.GITHUB_CLIENT_ID or "",
+    }
+
+
 @router.post("/oauth/{provider}", response_model=TokenResponse)
 @router.post("/oauth/{provider}/", response_model=TokenResponse)
 async def oauth_login(provider: str, req: OAuthLoginRequest, db=Depends(get_database)):
     """
     Authenticate or auto-register via Google or GitHub OAuth.
-    Supports development authorization and token payloads.
+    Supports real OAuth access tokens/authorization codes as well as dev fallback.
     """
     prov = provider.lower().strip()
     if prov not in ("google", "github"):
@@ -270,18 +282,82 @@ async def oauth_login(provider: str, req: OAuthLoginRequest, db=Depends(get_data
             detail=f"Unsupported OAuth provider '{provider}'. Must be 'google' or 'github'.",
         )
 
-    # Determine identity
-    if req.email:
-        email = str(req.email).strip().lower()
-    else:
-        # Generate default provider email if none passed
-        default_user = req.username or req.name or f"{prov}_trader"
-        safe_tag = re.sub(r"[^a-zA-Z0-9_]", "", default_user.lower())[:15] or "user"
-        email = f"{safe_tag}@{prov}.internal"
+    email = None
+    username = req.username
+    full_name = req.name
+    avatar_url = req.avatar_url
 
-    username = req.username or req.name or email.split("@")[0]
+    # Real GitHub authorization code exchange
+    if prov == "github" and req.code and settings.GITHUB_CLIENT_ID and settings.GITHUB_CLIENT_SECRET:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                res = await client.post(
+                    "https://github.com/login/oauth/access_token",
+                    json={
+                        "client_id": settings.GITHUB_CLIENT_ID,
+                        "client_secret": settings.GITHUB_CLIENT_SECRET,
+                        "code": req.code,
+                    },
+                    headers={"Accept": "application/json"},
+                )
+                if res.status_code == 200:
+                    token_data = res.json()
+                    gh_token = token_data.get("access_token")
+                    if gh_token:
+                        u_res = await client.get(
+                            "https://api.github.com/user",
+                            headers={"Authorization": f"Bearer {gh_token}"},
+                        )
+                        if u_res.status_code == 200:
+                            gh_user = u_res.json()
+                            username = gh_user.get("login") or username
+                            full_name = gh_user.get("name") or full_name
+                            avatar_url = gh_user.get("avatar_url") or avatar_url
+                            email = gh_user.get("email")
+
+                        if not email:
+                            e_res = await client.get(
+                                "https://api.github.com/user/emails",
+                                headers={"Authorization": f"Bearer {gh_token}"},
+                            )
+                            if e_res.status_code == 200:
+                                for em in e_res.json():
+                                    if em.get("primary") or em.get("verified"):
+                                        email = em.get("email")
+                                        break
+        except Exception:
+            pass
+
+    # Real Google OAuth token verification
+    if prov == "google" and req.oauth_token:
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                res = await client.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {req.oauth_token}"},
+                )
+                if res.status_code == 200:
+                    g_user = res.json()
+                    email = g_user.get("email") or email
+                    full_name = g_user.get("name") or full_name
+                    avatar_url = g_user.get("picture") or avatar_url
+                    if not username and email:
+                        username = email.split("@")[0]
+        except Exception:
+            pass
+
+    # Determine identity if not fetched via provider
+    if not email:
+        if req.email:
+            email = str(req.email).strip().lower()
+        else:
+            default_user = username or full_name or f"{prov}_trader"
+            safe_tag = re.sub(r"[^a-zA-Z0-9_]", "", default_user.lower())[:15] or "user"
+            email = f"{safe_tag}@{prov}.internal"
+
+    username = username or req.name or email.split("@")[0]
     username = re.sub(r"[^a-zA-Z0-9_-]", "", username)[:30] or f"{prov}_user"
-    full_name = req.name or f"{prov.capitalize()} Trader"
+    full_name = full_name or req.name or f"{prov.capitalize()} Trader"
 
     matched_user = None
 

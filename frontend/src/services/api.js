@@ -343,6 +343,18 @@ export const apiClient = {
   },
 
   // Authentication
+  async getOAuthConfig() {
+    try {
+      const res = await fetch(`${API_BASE}/auth/oauth/config`);
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // Ignore
+    }
+    return { google_client_id: '', github_client_id: '' };
+  },
+
   async login(username, password) {
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
