@@ -501,7 +501,7 @@ export const AuthPage = ({ onLoginSuccess, onExploreGuest }) => {
                         password === confirmPassword ? 'text-emerald-400' : 'text-rose-400'
                       }`}
                     >
-                      {password === confirmPassword ? '✓ Passwords match' : '✕ Does not match'}
+                      {password === confirmPassword ? 'Passwords match' : 'Does not match'}
                     </span>
                   )}
                 </div>
@@ -664,7 +664,7 @@ export const AuthPage = ({ onLoginSuccess, onExploreGuest }) => {
                         password === confirmPassword ? 'text-emerald-400' : 'text-rose-400'
                       }`}
                     >
-                      {password === confirmPassword ? '✓ Passwords match' : '✕ Does not match'}
+                      {password === confirmPassword ? 'Passwords match' : 'Does not match'}
                     </span>
                   )}
                 </div>

@@ -13,6 +13,7 @@ import { RiskAnalyticsPage } from './pages/RiskAnalyticsPage';
 import { PortfolioPage } from './pages/PortfolioPage';
 import { SentimentPage } from './pages/SentimentPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SwaggerDocsPage } from './pages/SwaggerDocsPage';
 import { AuthPage } from './pages/AuthPage';
 
 // Global Keyboard Navigation Listener
@@ -53,6 +54,9 @@ const KeyboardShortcutsHandler = () => {
         case '9':
           navigate('/settings');
           break;
+        case '0':
+          navigate('/docs');
+          break;
         default:
           break;
       }
@@ -86,6 +90,9 @@ export function App() {
             <Route path="portfolio" element={<PortfolioPage />} />
             <Route path="sentiment" element={<SentimentPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="docs" element={<SwaggerDocsPage />} />
+            <Route path="api-docs" element={<SwaggerDocsPage />} />
+            <Route path="swagger" element={<SwaggerDocsPage />} />
           </Route>
 
           {/* Wildcard Fallback */}

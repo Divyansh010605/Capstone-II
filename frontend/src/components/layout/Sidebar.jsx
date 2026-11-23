@@ -10,6 +10,7 @@ import {
   Briefcase,
   Newspaper,
   Settings,
+  FileCode,
   ChevronLeft,
   ChevronRight,
   Database,
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { path: '/risk', label: 'Risk Analytics', icon: ShieldAlert, keyHint: '6' },
   { path: '/portfolio', label: 'Portfolio', icon: Briefcase, keyHint: '7' },
   { path: '/sentiment', label: 'News & Sentiment', icon: Newspaper, keyHint: '8' },
+  { path: '/docs', label: 'API Docs (Swagger)', icon: FileCode, keyHint: '0' },
   { path: '/settings', label: 'Settings', icon: Settings, keyHint: '9' },
 ];
 

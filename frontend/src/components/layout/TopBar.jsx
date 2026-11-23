@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Activity, Clock, Shield, User, LogOut, ChevronDown } from 'lucide-react';
+import { Search, Activity, Clock, Shield, User, LogOut, ChevronDown, FileCode } from 'lucide-react';
 import { useTerminal } from '../../context/TerminalContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -157,6 +157,15 @@ export const TopBar = () => {
       {/* Right: Engine Status & Auth */}
       <div className="flex items-center gap-3">
         {/* Backend Status Pill */}
+        <button
+          onClick={() => navigate('/docs')}
+          title="Open Swagger & OpenAPI Specification"
+          className="hidden md:inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 border border-[#343B33] bg-[#202720] hover:bg-[#283228] text-[#E9E8DF] transition-colors"
+        >
+          <FileCode className="w-3 h-3 text-[#C7F36B]" />
+          <span>SWAGGER API</span>
+        </button>
+
         <div
           title={isBackendOnline ? `FastAPI Backend Online (${apiLatency || 12}ms)` : 'In-Memory Fallback Active'}
           className={`hidden sm:inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 border ${

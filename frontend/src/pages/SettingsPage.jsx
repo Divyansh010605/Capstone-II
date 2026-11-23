@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Server,
   CheckCircle2,
+  FileCode,
 } from 'lucide-react';
 import { useTerminal } from '../context/TerminalContext';
 import { useNavigate } from 'react-router-dom';
@@ -134,6 +135,16 @@ export const SettingsPage = () => {
               <span className="text-[10px] text-[#969B91] block">NLP LEXICON</span>
               <span className="text-[#77C98B] font-bold">VADER Lexicon Ready</span>
             </div>
+          </div>
+
+          <div className="pt-2 flex gap-2 border-t border-[#242B24]">
+            <button
+              onClick={() => navigate('/docs')}
+              className="term-btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+            >
+              <FileCode className="w-3.5 h-3.5" />
+              <span>EXPLORE SWAGGER API & OPENAPI CONSOLE</span>
+            </button>
           </div>
         </div>
       </div>
