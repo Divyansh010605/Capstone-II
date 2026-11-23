@@ -1,302 +1,334 @@
 @import "tailwindcss";
 
-/* ═══════════════════════════════════════════════
-   ALPHAQUANT AI — DESIGN SYSTEM
-   Theme: Cyber-Fintech Dark  |  Cyan / Blue / Indigo
-   ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   ALPHAQUANT TERMINAL — INSTITUTIONAL QUANTITATIVE DESIGN SYSTEM
+   Visual style: Dark, high-contrast, technical, and information-dense
+   Strict Color Palette:
+     Background:     #101310
+     Surfaces:       #191E19
+     Surface Hover:  #202720
+     Borders:        #343B33
+     Primary Text:   #E9E8DF
+     Secondary Text: #969B91
+     Accent:         #C7F36B
+     Positive:       #77C98B
+     Negative:       #E47770
+   Typography:
+     Headings:       Space Grotesk
+     Body:           IBM Plex Sans
+     Figures/Mono:   IBM Plex Mono
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ─── CSS Custom Properties ─── */
-:root {
-  --bg-base:        #06080d;
-  --bg-surface:     #0c1017;
-  --bg-card:        rgba(13, 18, 28, 0.80);
-  --bg-input:       #090d16;
-  --border:         rgba(255, 255, 255, 0.08);
-  --border-hi:      rgba(56, 189, 248, 0.40);
-  --text-primary:   #f1f5f9;
-  --text-muted:     #94a3b8;
-  --cyan:           #06b6d4;
-  --blue:           #3b82f6;
-  --indigo:         #6366f1;
-  --emerald:        #10b981;
-  --rose:           #f43f5e;
-  --amber:          #f59e0b;
-  --purple:         #8b5cf6;
+@theme {
+  --color-term-bg: #101310;
+  --color-term-surface: #191E19;
+  --color-term-surface-hover: #202720;
+  --color-term-surface-elevated: #242B24;
+  --color-term-border: #343B33;
+  --color-term-border-bright: #475245;
+  --color-term-text: #E9E8DF;
+  --color-term-muted: #969B91;
+  --color-term-accent: #C7F36B;
+  --color-term-positive: #77C98B;
+  --color-term-negative: #E47770;
+
+  --font-heading: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 }
 
-/* ─── Global Reset ─── */
-*, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+:root {
+  --bg-base: #101310;
+  --bg-surface: #191E19;
+  --bg-surface-hover: #202720;
+  --border-color: #343B33;
+  --text-primary: #E9E8DF;
+  --text-secondary: #969B91;
+  --accent-color: #C7F36B;
+  --positive-color: #77C98B;
+  --negative-color: #E47770;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: #101310;
+  color: #E9E8DF;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
 
 body {
-  margin: 0; padding: 0;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: var(--bg-base);
-  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  background-color: #101310;
+  color: #E9E8DF;
   min-height: 100vh;
   overflow-x: hidden;
-  letter-spacing: -0.012em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code, kbd, samp, .font-mono, [class*="font-mono"] {
-  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, monospace;
+/* ── Typography Utility Classes ── */
+.font-heading {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
 }
 
-/* ─── Selection ─── */
+.font-body {
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.font-mono, code, kbd, samp, .term-mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: 'zero', 'tnum';
+}
+
+/* ── Custom Institutional Scrollbars ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #101310;
+}
+::-webkit-scrollbar-thumb {
+  background: #283028;
+  border-radius: 0;
+  border: 1px solid #343B33;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3c483c;
+}
+
+/* ── Selection ── */
 ::selection {
-  background: rgba(6, 182, 212, 0.3);
-  color: #ffffff;
+  background: #C7F36B;
+  color: #101310;
 }
 
-/* ─── Custom Scrollbar ─── */
-::-webkit-scrollbar       { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #06080d; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #334155; }
-
-/* ─── Glassmorphism Card ─── */
-.glass-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow:
-    0 4px 6px -2px rgba(0, 0, 0, 0.4),
-    0 12px 32px -8px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.02);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
-}
-.glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-}
-/* Clickable card lift */
-.glass-card-interactive:hover {
-  border-color: rgba(56, 189, 248, 0.25);
-  box-shadow:
-    0 4px 6px -2px rgba(0, 0, 0, 0.5),
-    0 16px 40px -8px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(56, 189, 248, 0.08);
-  transform: translateY(-1px);
+/* ── Institutional Terminal Container & Panels ── */
+.term-panel {
+  background-color: #191E19;
+  border: 1px solid #343B33;
+  border-radius: 2px;
 }
 
-/* ─── Primary CTA Button ─── */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: linear-gradient(135deg, #0ea5e9, #2563eb);
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 0.8rem;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  box-shadow: 0 2px 12px rgba(14, 165, 233, 0.3), 0 1px 2px rgba(0,0,0,0.4);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0284c7, #1d4ed8);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.45), 0 2px 4px rgba(0,0,0,0.4);
-}
-.btn-primary:active:not(:disabled) { transform: translateY(0); }
-.btn-primary:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.term-panel-interactive {
+  background-color: #191E19;
+  border: 1px solid #343B33;
+  border-radius: 2px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-/* ─── Secondary Button ─── */
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.term-panel-interactive:hover {
+  border-color: #475245;
+  background-color: #202720;
+}
+
+/* ── Terminal Header & Divider ── */
+.term-header {
+  border-bottom: 1px solid #343B33;
+  background-color: #161B16;
   padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
-  color: #e2e8f0;
-  font-weight: 600;
-  font-size: 0.8rem;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-}
-
-/* ─── Tab Navigation Buttons ─── */
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 14px;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.82rem;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  transition: all 0.18s ease;
-}
-.tab-btn:hover:not(.active) {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
-}
-.tab-btn.active {
-  background: rgba(56, 189, 248, 0.13);
-  color: #38bdf8;
-  border-color: rgba(56, 189, 248, 0.32);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.12), inset 0 1px 0 rgba(255,255,255,0.06);
-}
-.tab-btn.active svg { color: #38bdf8; }
-
-/* ─── Stat Badge Chips ─── */
-.badge-bullish {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: 99px;
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  font-size: 0.75rem; font-weight: 700;
-}
-.badge-bearish {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: 99px;
-  background: rgba(244, 63, 94, 0.15);
-  color: #fb7185;
-  border: 1px solid rgba(244, 63, 94, 0.35);
-  font-size: 0.75rem; font-weight: 700;
-}
-.badge-neutral {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 3px 10px; border-radius: 99px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  font-size: 0.75rem; font-weight: 700;
-}
-
-/* ─── Input / Select Fields ─── */
-input, select, textarea {
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  border-radius: 10px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
-}
-input::placeholder, textarea::placeholder { color: #475569; }
-select option { background: #0f172a; color: #f1f5f9; }
-
-/* ─── Stat Metric Cards (inner) ─── */
-.metric-card {
-  background: var(--bg-input);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 14px;
-  padding: 1rem 1.1rem;
-  position: relative;
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 8px rgba(0,0,0,0.3);
-  transition: border-color 0.2s;
-}
-.metric-card:hover { border-color: rgba(255, 255, 255, 0.12); }
-.metric-card::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
-}
-
-/* ─── Ticker Scroll Animation ─── */
-@keyframes tickerScroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.ticker-scroll {
-  will-change: transform;
-  display: flex;
-  width: max-content;
-}
-.ticker-scroll:hover {
-  animation-play-state: paused;
-}
-
-/* ─── Fade-in Modals ─── */
-@keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.97) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-.modal-content {
-  animation: fadeInScale 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* ─── Spinning loading pulse ─── */
-@keyframes spinPulse {
-  0%   { transform: rotate(0deg); opacity: 1; }
-  50%  { opacity: 0.5; }
-  100% { transform: rotate(360deg); opacity: 1; }
-}
-
-/* ─── Glow utilities ─── */
-.glow-cyan   { box-shadow: 0 0 24px -4px rgba(6, 182, 212, 0.5); }
-.glow-blue   { box-shadow: 0 0 24px -4px rgba(59, 130, 246, 0.5); }
-.glow-emerald{ box-shadow: 0 0 24px -4px rgba(16, 185, 129, 0.5); }
-.glow-rose   { box-shadow: 0 0 24px -4px rgba(244, 63, 94, 0.5); }
-
-/* ─── Table Styles ─── */
-table { border-collapse: collapse; width: 100%; }
-thead th {
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #64748b;
-  padding: 12px 20px;
-}
-tbody tr td { padding: 12px 20px; }
-tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
-
-/* ─── Divider ─── */
-.divider { border: none; border-top: 1px solid rgba(255, 255, 255, 0.06); }
-
-/* ─── Animated Gradient Border (Special highlight cards) ─── */
-.gradient-border {
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden;
-}
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  padding: 1px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, rgba(6,182,212,0.4), rgba(99,102,241,0.3), rgba(6,182,212,0.4));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+  letter-spacing: 0.08em;
+  color: #969B91;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-/* ─── Responsive utility: hide scrollbars on mobile ticker ─── */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* ── Terminal Buttons ── */
+.term-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background-color: #C7F36B;
+  color: #101310;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid #C7F36B;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.term-btn-primary:hover {
+  background-color: #d8f78f;
+  border-color: #d8f78f;
+  box-shadow: 0 0 10px rgba(199, 243, 107, 0.25);
+}
+
+.term-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: #202720;
+  color: #E9E8DF;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  border: 1px solid #343B33;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.term-btn-secondary:hover {
+  background-color: #283228;
+  border-color: #475245;
+  color: #ffffff;
+}
+
+.term-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background-color: transparent;
+  color: #969B91;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.term-btn-ghost:hover {
+  color: #E9E8DF;
+  background-color: #202720;
+  border-color: #343B33;
+}
+
+/* ── Badges ── */
+.term-badge-accent {
+  background-color: rgba(199, 243, 107, 0.12);
+  color: #C7F36B;
+  border: 1px solid rgba(199, 243, 107, 0.3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.term-badge-positive {
+  background-color: rgba(119, 201, 139, 0.12);
+  color: #77C98B;
+  border: 1px solid rgba(119, 201, 139, 0.3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.term-badge-negative {
+  background-color: rgba(228, 119, 112, 0.12);
+  color: #E47770;
+  border: 1px solid rgba(228, 119, 112, 0.3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.term-badge-neutral {
+  background-color: rgba(150, 155, 145, 0.12);
+  color: #969B91;
+  border: 1px solid rgba(150, 155, 145, 0.3);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.6875rem;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+/* ── Form Inputs ── */
+.term-input {
+  background-color: #121512;
+  border: 1px solid #343B33;
+  color: #E9E8DF;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8125rem;
+  padding: 7px 10px;
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  width: 100%;
+}
+
+.term-input:focus {
+  border-color: #C7F36B;
+}
+
+.term-input::placeholder {
+  color: #5d6459;
+}
+
+/* ── Financial Tables ── */
+.term-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+}
+
+.term-table th {
+  background-color: #141814;
+  color: #969B91;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid #343B33;
+}
+
+.term-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #232923;
+  color: #E9E8DF;
+}
+
+.term-table tr:hover td {
+  background-color: #1f251f;
+}
+
+/* ── Ticker Tape Animation ── */
+@keyframes tickerMove {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: tickerMove 40s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
