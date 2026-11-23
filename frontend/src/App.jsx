@@ -1,472 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { Navbar } from './components/Navbar';
-import { MarketTickerBar } from './components/MarketTickerBar';
-import { CandlestickChart } from './components/CandlestickChart';
-import { StockDashboard } from './components/StockDashboard';
-import { PredictionPanel } from './components/PredictionPanel';
-import { RiskDashboard } from './components/RiskDashboard';
-import { PortfolioManager } from './components/PortfolioManager';
-import { SentimentViewer } from './components/SentimentViewer';
-import { WatchlistModal } from './components/WatchlistModal';
-import { AuthModal } from './components/AuthModal';
-import { AuthPage } from './components/AuthPage';
-import { apiClient } from './services/api';
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Info } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { TerminalProvider } from './context/TerminalContext';
+import { TerminalLayout } from './components/layout/TerminalLayout';
 
-/* ── Small header strip showing current stock quick-stats ── */
-const StockInfoStrip = ({ symbol, historyData, loading }) => {
-  const records = historyData?.data || [];
-  const latest = records[records.length - 1];
-  const prev   = records[records.length - 2];
+// Application Pages
+import { OverviewPage } from './pages/OverviewPage';
+import { StockExplorerPage } from './pages/StockExplorerPage';
+import { WatchlistPage } from './pages/WatchlistPage';
+import { PredictionsPage } from './pages/PredictionsPage';
+import { ModelPerformancePage } from './pages/ModelPerformancePage';
+import { RiskAnalyticsPage } from './pages/RiskAnalyticsPage';
+import { PortfolioPage } from './pages/PortfolioPage';
+import { SentimentPage } from './pages/SentimentPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { SwaggerDocsPage } from './pages/SwaggerDocsPage';
+import { AuthPage } from './pages/AuthPage';
 
-  if (!latest) return null;
+// Global Keyboard Navigation Listener
+const KeyboardShortcutsHandler = () => {
+  const navigate = useNavigate();
 
-  const latestClose = typeof latest.close === 'number' ? latest.close : 0;
-  const prevClose = prev && typeof prev.close === 'number' ? prev.close : latestClose;
-  const chg    = prev ? latestClose - prevClose : 0;
-  const chgPct = prevClose > 0 ? ((chg / prevClose) * 100).toFixed(2) : '0.00';
-  const isUp   = chg >= 0;
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger when typing in inputs/textareas
+      const tag = e.target.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
-  return (
-    <div className="flex flex-wrap items-center gap-3 px-5 py-3 bg-[#090d16]/70 border-b border-white/5 text-xs font-mono backdrop-blur-sm">
-      <div className="flex items-center gap-2">
-        <span className="font-bold text-white text-sm">{symbol}</span>
-        <span className="font-black text-white">${latestClose.toFixed(2)}</span>
-        <span className={`flex items-center gap-0.5 font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
-          {isUp ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-          {isUp ? '+' : ''}{chgPct}%
-        </span>
-      </div>
-      <span className="text-slate-600 hidden sm:block">|</span>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-400 hidden sm:flex">
-        <span>Open: <strong className="text-slate-200">${typeof latest.open === 'number' ? latest.open.toFixed(2) : '0.00'}</strong></span>
-        <span>High: <strong className="text-emerald-400">${typeof latest.high === 'number' ? latest.high.toFixed(2) : '0.00'}</strong></span>
-        <span>Low: <strong className="text-rose-400">${typeof latest.low === 'number' ? latest.low.toFixed(2) : '0.00'}</strong></span>
-        <span>Vol: <strong className="text-slate-200">{typeof latest.volume === 'number' ? latest.volume.toLocaleString() : '0'}</strong></span>
-        {latest.rsi_14 != null && <span>RSI: <strong className={`${latest.rsi_14 > 70 ? 'text-rose-400' : latest.rsi_14 < 30 ? 'text-emerald-400' : 'text-slate-200'}`}>{Number(latest.rsi_14).toFixed(1)}</strong></span>}
-      </div>
-    </div>
-  );
-};
+      switch (e.key) {
+        case '1':
+          navigate('/overview');
+          break;
+        case '2':
+          navigate('/explorer');
+          break;
+        case '3':
+          navigate('/watchlist');
+          break;
+        case '4':
+          navigate('/predictions');
+          break;
+        case '5':
+          navigate('/models');
+          break;
+        case '6':
+          navigate('/risk');
+          break;
+        case '7':
+          navigate('/portfolio');
+          break;
+        case '8':
+          navigate('/sentiment');
+          break;
+        case '9':
+          navigate('/settings');
+          break;
+        case '0':
+          navigate('/docs');
+          break;
+        default:
+          break;
+      }
+    };
 
-const normalizeWatchlist = (items) => {
-  if (!Array.isArray(items)) return [];
-  return items.map((item) => {
-    if (typeof item === 'string') {
-      return {
-        symbol: item,
-        name: `${item} Corp`,
-        current_price: 150.0,
-        previous_close: 148.0,
-        sector: 'Equities',
-      };
-    }
-    return item;
-  });
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
+  return null;
 };
 
 export function App() {
-  const [activeTab, setActiveTab] = useState('technicals');
-  const [selectedSymbol, setSelectedSymbol] = useState('AAPL');
-  const [period, setPeriod] = useState('1y');
-  const [selectedHorizon, setSelectedHorizon] = useState(7);
-  const [selectedModel, setSelectedModel] = useState('ensemble');
-
-  // Backend connection status
-  const [isBackendOnline, setIsBackendOnline] = useState(false);
-
-  // Data states
-  const [availableStocks, setAvailableStocks] = useState([]);
-  const [historyData, setHistoryData] = useState(null);
-  const [predictionData, setPredictionData] = useState(null);
-  const [riskData, setRiskData] = useState(null);
-  const [sentimentData, setSentimentData] = useState(null);
-  const [portfolioData, setPortfolioData] = useState(null);
-  const [watchlist, setWatchlist] = useState([]);
-
-  // Modals & User Auth
-  const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('alpha_jwt_token') || '');
-  const [isGuestMode, setIsGuestMode] = useState(false);
-
-  // Loading indicators & error states
-  const [loading, setLoading] = useState(false);
-  const [stockError, setStockError] = useState(null);
-  const [predLoading, setPredLoading] = useState(false);
-  const [predError, setPredError] = useState(null);
-
-  // 1. Check Backend Connectivity
-  useEffect(() => {
-    async function checkStatus() {
-      const online = await apiClient.checkHealth();
-      setIsBackendOnline(online);
-    }
-    checkStatus();
-    const timer = setInterval(checkStatus, 15000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // 2. Initial Platform Initialization
-  useEffect(() => {
-    async function initPlatform() {
-      try {
-        const stocks = await apiClient.getStocks();
-        if (stocks && stocks.length > 0) setAvailableStocks(stocks);
-      } catch (err) {
-        console.error('Stock list error:', err);
-      }
-
-      if (token) {
-        try {
-          const u = await apiClient.getMe(token);
-          if (u) setUser(u);
-        } catch {
-          // expired — user stays logged out
-        }
-      }
-
-      try {
-        const [port, wl] = await Promise.all([
-          apiClient.getPortfolio(),
-          apiClient.getWatchlist(),
-        ]);
-        if (port) setPortfolioData(port);
-        if (wl)   setWatchlist(normalizeWatchlist(wl));
-      } catch (err) {
-        console.error('Portfolio/Watchlist init error:', err);
-      }
-    }
-    initPlatform();
-  }, [token]);
-
-  // 3. Load stock-specific data whenever symbol or period changes
-  useEffect(() => {
-    let cancelled = false;
-    async function loadStockData() {
-      setLoading(true);
-      setStockError(null);
-      try {
-        const [hist, risk, sent] = await Promise.all([
-          apiClient.getMarketHistory(selectedSymbol, period),
-          apiClient.getRiskMetrics(selectedSymbol),
-          apiClient.getSentiment(selectedSymbol),
-        ]);
-        if (!cancelled) {
-          setHistoryData(hist);
-          setRiskData(risk);
-          setSentimentData(sent);
-        }
-      } catch (err) {
-        console.error('Stock data error:', err);
-        if (!cancelled) {
-          setStockError(err?.message || 'Failed to fetch market data. The service may be throttled or temporarily offline.');
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    loadStockData();
-    return () => { cancelled = true; };
-  }, [selectedSymbol, period]);
-
-  // 4. Load AI Predictions whenever symbol / horizon / model changes
-  useEffect(() => {
-    let cancelled = false;
-    async function loadPredictions() {
-      setPredLoading(true);
-      setPredError(null);
-      try {
-        const pred = await apiClient.getPredictions(selectedSymbol, selectedHorizon, selectedModel);
-        if (!cancelled) setPredictionData(pred);
-      } catch (err) {
-        console.error('Prediction error:', err);
-        if (!cancelled) {
-          setPredError(err?.message || 'Failed to load AI predictions. Please verify backend service.');
-        }
-      } finally {
-        if (!cancelled) setPredLoading(false);
-      }
-    }
-    loadPredictions();
-    return () => { cancelled = true; };
-  }, [selectedSymbol, selectedHorizon, selectedModel]);
-
-  /* ── Handlers ── */
-  const handleAddPosition = async (sym, qty, price) => {
-    try {
-      const updated = await apiClient.addPosition(
-        portfolioData?.portfolio_id || 'default-demo-portfolio',
-        sym, qty, price
-      );
-      setPortfolioData(updated);
-    } catch (err) { alert(`Add position failed: ${err.message}`); }
-  };
-
-  const handleRemovePosition = async (sym, qty) => {
-    try {
-      const updated = await apiClient.removePosition(
-        portfolioData?.portfolio_id || 'default-demo-portfolio',
-        sym, qty
-      );
-      setPortfolioData(updated);
-    } catch (err) { alert(`Remove position failed: ${err.message}`); }
-  };
-
-  const handleAddToWatchlist = async (sym) => {
-    try {
-      const updated = await apiClient.addToWatchlist(sym);
-      if (Array.isArray(updated) && updated.length > 0 && typeof updated[0] === 'string') {
-        const fullWl = await apiClient.getWatchlist();
-        setWatchlist(normalizeWatchlist(fullWl));
-      } else if (Array.isArray(updated)) {
-        setWatchlist(normalizeWatchlist(updated));
-      }
-    } catch (err) { alert(`Watchlist add failed: ${err.message}`); }
-  };
-
-  const handleRemoveFromWatchlist = async (sym) => {
-    try {
-      const updated = await apiClient.removeFromWatchlist(sym);
-      if (Array.isArray(updated) && updated.length > 0 && typeof updated[0] === 'string') {
-        const fullWl = await apiClient.getWatchlist();
-        setWatchlist(normalizeWatchlist(fullWl));
-      } else if (Array.isArray(updated)) {
-        setWatchlist(normalizeWatchlist(updated));
-      } else {
-        setWatchlist((prev) => prev.filter((s) => (typeof s === 'string' ? s : s.symbol) !== sym));
-      }
-    } catch (err) { alert(`Watchlist remove failed: ${err.message}`); }
-  };
-
-  const handleLoginSuccess = (userData, tokenValue) => {
-    if (tokenValue) {
-      localStorage.setItem('alpha_jwt_token', tokenValue);
-      setToken(tokenValue);
-      apiClient.setToken(tokenValue);
-    }
-    setUser(userData);
-    setIsGuestMode(false);
-  };
-
-  const handleLogin = async (usr, pwd) => {
-    const res = await apiClient.login(usr, pwd);
-    handleLoginSuccess(res.user, res.access_token);
-  };
-
-  const handleRegister = async (data) => {
-    await apiClient.register(data);
-    await handleLogin(data.username, data.password);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('alpha_jwt_token');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('auth_token');
-    setToken('');
-    apiClient.setToken('');
-    setUser(null);
-    setIsGuestMode(false);
-    setIsAuthOpen(false);
-    setPortfolioData(null);
-    setWatchlist([]);
-  };
-
-  const handleRetryStockData = async () => {
-    setLoading(true);
-    setStockError(null);
-    try {
-      const [hist, risk, sent] = await Promise.all([
-        apiClient.getMarketHistory(selectedSymbol, period),
-        apiClient.getRiskMetrics(selectedSymbol),
-        apiClient.getSentiment(selectedSymbol),
-      ]);
-      setHistoryData(hist);
-      setRiskData(risk);
-      setSentimentData(sent);
-    } catch (err) {
-      console.error('Stock retry error:', err);
-      setStockError(err?.message || 'Failed to fetch market data on retry.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefreshPredictions = async () => {
-    setPredError(null);
-    setPredictionData(null);
-    setPredLoading(true);
-    try {
-      const pred = await apiClient.getPredictions(selectedSymbol, selectedHorizon, selectedModel);
-      setPredictionData(pred);
-    } catch (err) {
-      console.error('Refresh error:', err);
-      setPredError(err?.message || 'Failed to refresh AI predictions.');
-    } finally {
-      setPredLoading(false);
-    }
-  };
-
-  if (!user && !isGuestMode) {
-    return (
-      <AuthPage
-        onLoginSuccess={handleLoginSuccess}
-        onExploreGuest={() => setIsGuestMode(true)}
-      />
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#06080d] text-[#e2e8f0] selection:bg-cyan-500/30 selection:text-white">
+    <BrowserRouter>
+      <TerminalProvider>
+        <KeyboardShortcutsHandler />
+        <Routes>
+          {/* Full-Page Auth Gateway */}
+          <Route path="/auth" element={<AuthPage />} />
 
-      {/* ── Ambient Background Glow Orbs ── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-        <div className="absolute -top-60 -left-40 w-[520px] h-[520px] bg-cyan-500/8 rounded-full blur-[150px]" />
-        <div className="absolute top-1/4 -right-60 w-[480px] h-[480px] bg-indigo-600/8 rounded-full blur-[160px]" />
-        <div className="absolute -bottom-60 left-1/4 w-[500px] h-[500px] bg-blue-600/8 rounded-full blur-[150px]" />
-      </div>
+          {/* Persistent Terminal Layout & Workspaces */}
+          <Route path="/" element={<TerminalLayout />}>
+            <Route index element={<Navigate to="/overview" replace />} />
+            <Route path="overview" element={<OverviewPage />} />
+            <Route path="explorer" element={<StockExplorerPage />} />
+            <Route path="watchlist" element={<WatchlistPage />} />
+            <Route path="predictions" element={<PredictionsPage />} />
+            <Route path="models" element={<ModelPerformancePage />} />
+            <Route path="risk" element={<RiskAnalyticsPage />} />
+            <Route path="portfolio" element={<PortfolioPage />} />
+            <Route path="sentiment" element={<SentimentPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="docs" element={<SwaggerDocsPage />} />
+            <Route path="api-docs" element={<SwaggerDocsPage />} />
+            <Route path="swagger" element={<SwaggerDocsPage />} />
+          </Route>
 
-      {/* ── Scrolling Market Ticker Bar ── */}
-      <MarketTickerBar availableStocks={availableStocks} />
-
-      {/* ── Main Content ── */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-5 pb-16">
-
-        {/* Sticky Navbar */}
-        <Navbar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          selectedSymbol={selectedSymbol}
-          setSelectedSymbol={setSelectedSymbol}
-          popularStocks={availableStocks}
-          onOpenWatchlist={() => setIsWatchlistOpen(true)}
-          user={user}
-          onOpenAuth={() => setIsAuthOpen(true)}
-          onLogout={handleLogout}
-          isBackendOnline={isBackendOnline}
-        />
-
-        {/* Guest Mode Banner */}
-        {isGuestMode && !user && (
-          <div className="mb-4 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-indigo-500/10 border border-cyan-500/20 text-xs font-mono flex flex-wrap items-center justify-between gap-2.5 animate-fadeIn">
-            <div className="flex items-center gap-2 text-cyan-300">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              <span>Exploring in <strong>Guest Mode</strong> (demo data active).</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsAuthOpen(true)}
-                className="px-2.5 py-1 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-[11px] transition-colors"
-              >
-                Sign In / Register
-              </button>
-              <button
-                onClick={() => setIsGuestMode(false)}
-                className="text-slate-400 hover:text-white underline text-[11px] transition-colors"
-              >
-                Return to Login
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Stock Quick-Stats Strip (visible on chart & other tabs) */}
-        {historyData && (
-          <div className="glass-card mb-4 overflow-hidden">
-            <StockInfoStrip symbol={selectedSymbol} historyData={historyData} loading={loading} />
-          </div>
-        )}
-
-        {/* Loading skeleton shimmer (on initial load) */}
-        {loading && !historyData && (
-          <div className="glass-card mb-4 p-6 flex items-center gap-4 text-slate-400 font-mono text-sm">
-            <div className="w-5 h-5 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-            <span>Fetching market data for <strong className="text-cyan-400">{selectedSymbol}</strong>…</span>
-          </div>
-        )}
-
-        {/* ── Dynamic Tab Content ── */}
-        <main>
-          {activeTab === 'technicals' && (
-            <StockDashboard
-              historyData={historyData}
-              symbol={selectedSymbol}
-              period={period}
-              setPeriod={setPeriod}
-              loading={loading}
-              error={stockError}
-              onRetry={handleRetryStockData}
-            />
-          )}
-
-          {activeTab === 'predictions' && (
-            <PredictionPanel
-              predictionData={predictionData}
-              selectedHorizon={selectedHorizon}
-              setSelectedHorizon={setSelectedHorizon}
-              selectedModel={selectedModel}
-              setSelectedModel={setSelectedModel}
-              onRefresh={handleRefreshPredictions}
-              loading={predLoading}
-              error={predError}
-              onRetry={handleRefreshPredictions}
-              symbol={selectedSymbol}
-            />
-          )}
-
-          {activeTab === 'risk' && (
-            <RiskDashboard riskData={riskData} symbol={selectedSymbol} />
-          )}
-
-          {activeTab === 'portfolio' && (
-            <PortfolioManager
-              portfolio={portfolioData}
-              onAddPosition={handleAddPosition}
-              onRemovePosition={handleRemovePosition}
-              availableStocks={availableStocks}
-            />
-          )}
-
-          {activeTab === 'sentiment' && (
-            <SentimentViewer sentimentData={sentimentData} symbol={selectedSymbol} />
-          )}
-        </main>
-
-        {/* ── Footer ── */}
-        <footer className="mt-14 pt-5 border-t border-white/5 text-center space-y-1.5">
-          <p className="text-xs font-mono text-slate-500">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 font-bold">ALPHAQUANT AI</span>
-            {' '}• Quantitative Financial Analytics & Deep Learning Price Forecasting Platform
-          </p>
-          <p className="text-[11px] text-slate-600 font-mono max-w-lg mx-auto">
-            All price forecasts, risk metrics, and sentiment scores are experimental AI outputs for research &amp; educational purposes only.
-            Not financial or investment advice.
-          </p>
-        </footer>
-      </div>
-
-      {/* ── Global Modals ── */}
-      <WatchlistModal
-        isOpen={isWatchlistOpen}
-        onClose={() => setIsWatchlistOpen(false)}
-        watchlist={watchlist}
-        onSelectStock={setSelectedSymbol}
-        onAddToWatchlist={handleAddToWatchlist}
-        onRemoveFromWatchlist={handleRemoveFromWatchlist}
-      />
-
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        user={user}
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-        onLogout={handleLogout}
-      />
-    </div>
+          {/* Wildcard Fallback */}
+          <Route path="*" element={<Navigate to="/overview" replace />} />
+        </Routes>
+      </TerminalProvider>
+    </BrowserRouter>
   );
 }
 
