@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ai_engine/requirements.txt /workspace/ai_engine/requirements.txt
-RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r /workspace/ai_engine/requirements.txt
+RUN pip install --no-cache-dir -r /workspace/ai_engine/requirements.txt
 
 COPY ai_engine /workspace/ai_engine
 
