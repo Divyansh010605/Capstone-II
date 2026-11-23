@@ -2,20 +2,19 @@ FROM python:3.11-slim
 
 WORKDIR /workspace
 
-# Install system dependencies
+# Install only curl for container healthcheck and purge apt cache
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     curl \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Copy requirements
+# Install dependencies using CPU PyTorch wheels (avoids ~8GB of unused CUDA binaries)
 COPY backend/requirements.txt /workspace/backend/requirements.txt
-RUN pip install --no-cache-dir -r /workspace/backend/requirements.txt
+RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r /workspace/backend/requirements.txt
 
-# Download NLTK data
+# Download NLTK sentiment lexicon
 RUN python -c "import nltk; nltk.download('vader_lexicon', quiet=True)"
 
-# Copy backend & AI engine code
+# Copy application source code
 COPY backend /workspace/backend
 COPY ai_engine /workspace/ai_engine
 
