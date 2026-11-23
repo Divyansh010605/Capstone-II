@@ -50,7 +50,7 @@ const GitHubIcon = () => (
 );
 
 export const AuthPage = () => {
-  const { login, register, setGuestMode } = useTerminal();
+  const { login, register, oauthLogin, setGuestMode } = useTerminal();
   const navigate = useNavigate();
 
   // Mode: 'login' | 'register' | 'forgot_request' | 'forgot_reset'
@@ -124,14 +124,22 @@ export const AuthPage = () => {
     clearMessages();
     setLoading(true);
     try {
-      const res = await apiClient.oauthLogin(provider, {
-        email: `${provider}_user@institutional.quant`,
-        username: `${provider}_quant`,
-        name: `${provider.toUpperCase()} Researcher`,
-      });
-      if (res.access_token) {
-        localStorage.setItem('alpha_jwt_token', res.access_token);
-        apiClient.setToken(res.access_token);
+      if (oauthLogin) {
+        await oauthLogin(provider, {
+          email: `${provider}_user@institutional.quant`,
+          username: `${provider}_quant`,
+          name: `${provider.toUpperCase()} Researcher`,
+        });
+      } else {
+        const res = await apiClient.oauthLogin(provider, {
+          email: `${provider}_user@institutional.quant`,
+          username: `${provider}_quant`,
+          name: `${provider.toUpperCase()} Researcher`,
+        });
+        if (res.access_token) {
+          localStorage.setItem('alpha_jwt_token', res.access_token);
+          apiClient.setToken(res.access_token);
+        }
       }
       navigate('/overview');
     } catch (err) {

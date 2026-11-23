@@ -258,6 +258,18 @@ export const TerminalProvider = ({ children }) => {
     return res;
   };
 
+  const oauthLogin = async (provider, profileData) => {
+    const res = await apiClient.oauthLogin(provider, profileData);
+    if (res?.access_token) {
+      localStorage.setItem('alpha_jwt_token', res.access_token);
+      setToken(res.access_token);
+      apiClient.setToken(res.access_token);
+    }
+    setUser(res.user);
+    setIsGuestMode(false);
+    return res;
+  };
+
   const register = async (userData) => {
     const res = await apiClient.register(userData);
     return res;
@@ -329,6 +341,7 @@ export const TerminalProvider = ({ children }) => {
     addToWatchlist,
     removeFromWatchlist,
     login,
+    oauthLogin,
     register,
     logout,
     refreshMarket,

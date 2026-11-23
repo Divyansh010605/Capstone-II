@@ -315,6 +315,16 @@ let inMemoryWatchlist = [
 export const apiClient = {
   isBackendConnected: false,
 
+  setToken(token) {
+    if (typeof localStorage !== 'undefined') {
+      if (token) {
+        localStorage.setItem('alpha_jwt_token', token);
+      } else {
+        localStorage.removeItem('alpha_jwt_token');
+      }
+    }
+  },
+
   getAuthHeaders(token) {
     const t = token || (typeof localStorage !== 'undefined' ? localStorage.getItem('alpha_jwt_token') : null);
     return t ? { Authorization: `Bearer ${t}` } : {};
