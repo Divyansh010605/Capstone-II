@@ -70,12 +70,13 @@ export const WatchlistPage = () => {
         <form onSubmit={handleAdd} className="flex items-center gap-2">
           <input
             type="text"
+            data-testid="watchlist-page-input"
             placeholder="ADD TICKER (E.G. NVDA)"
             value={newTicker}
             onChange={(e) => setNewTicker(e.target.value)}
             className="term-input uppercase w-48 text-xs py-1.5"
           />
-          <button type="submit" className="term-btn-primary text-xs py-1.5 px-3">
+          <button type="submit" data-testid="watchlist-page-add-btn" className="term-btn-primary text-xs py-1.5 px-3">
             <Plus className="w-3.5 h-3.5" />
             <span>ADD</span>
           </button>
@@ -120,10 +121,11 @@ export const WatchlistPage = () => {
                   const isUp = chg >= 0;
 
                   return (
-                    <tr key={sym}>
+                    <tr key={sym} data-testid={`watchlist-page-item-${sym}`}>
                       <td>
                         <div
                           onClick={() => handleExplore(sym)}
+                          data-testid={`watchlist-page-explore-${sym}`}
                           className="font-bold text-[#E9E8DF] cursor-pointer hover:text-[#C7F36B] transition-colors"
                         >
                           {sym}
@@ -166,6 +168,7 @@ export const WatchlistPage = () => {
                             PREDICT
                           </button>
                           <button
+                            data-testid={`watchlist-page-remove-${sym}`}
                             onClick={() => removeFromWatchlist(sym)}
                             className="p-1 text-[#969B91] hover:text-[#E47770]"
                             title="Remove from Watchlist"

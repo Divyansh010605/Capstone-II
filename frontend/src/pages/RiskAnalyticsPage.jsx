@@ -38,6 +38,7 @@ export const RiskAnalyticsPage = () => {
               QUANTITATIVE RISK ENGINE // {selectedSymbol}
             </span>
             <span
+              data-testid="risk-page-category"
               className={`text-xs px-2 py-0.5 font-bold border ${
                 category === 'Low Risk'
                   ? 'border-[#77C98B] text-[#77C98B] bg-[#77C98B]/10'
@@ -58,7 +59,7 @@ export const RiskAnalyticsPage = () => {
         <div className="flex items-center gap-3 bg-[#101310] border border-[#343B33] p-2.5">
           <div>
             <div className="text-[10px] text-[#969B91] uppercase">QUANT RISK SCORE</div>
-            <div className="text-xl font-black text-[#E9E8DF]">
+            <div data-testid="risk-page-score" className="text-xl font-black text-[#E9E8DF]">
               {score} <span className="text-xs text-[#969B91] font-normal">/ 100</span>
             </div>
           </div>
@@ -77,25 +78,25 @@ export const RiskAnalyticsPage = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
         <div className="term-panel p-3">
           <div className="text-[10px] text-[#969B91]">ANNUALIZED VOLATILITY (σ)</div>
-          <div className="text-xl font-bold text-[#E9E8DF] mt-1">{vol}%</div>
+          <div data-testid="risk-page-volatility" className="text-xl font-bold text-[#E9E8DF] mt-1">{vol}%</div>
           <div className="text-[9px] text-[#969B91] mt-1">252-DAY REALIZED VOL</div>
         </div>
 
         <div className="term-panel p-3">
           <div className="text-[10px] text-[#969B91]">MAX HISTORIC DRAWDOWN (MDD)</div>
-          <div className="text-xl font-bold text-[#E47770] mt-1">{mdd}%</div>
+          <div data-testid="risk-page-mdd" className="text-xl font-bold text-[#E47770] mt-1">{mdd}%</div>
           <div className="text-[9px] text-[#969B91] mt-1">PEAK-TO-TROUGH DECLINE</div>
         </div>
 
         <div className="term-panel p-3">
           <div className="text-[10px] text-[#969B91]">SHARPE RATIO (Rf = 4.0%)</div>
-          <div className="text-xl font-bold text-[#77C98B] mt-1">{sharpe}</div>
+          <div data-testid="risk-page-sharpe" className="text-xl font-bold text-[#77C98B] mt-1">{sharpe}</div>
           <div className="text-[9px] text-[#969B91] mt-1">RISK-ADJUSTED RETURN</div>
         </div>
 
         <div className="term-panel p-3">
           <div className="text-[10px] text-[#969B91]">SORTINO RATIO</div>
-          <div className="text-xl font-bold text-[#77C98B] mt-1">{sortino}</div>
+          <div data-testid="risk-page-sortino" className="text-xl font-bold text-[#77C98B] mt-1">{sortino}</div>
           <div className="text-[9px] text-[#969B91] mt-1">DOWNSIDE DEVIATION PENALTY</div>
         </div>
       </div>

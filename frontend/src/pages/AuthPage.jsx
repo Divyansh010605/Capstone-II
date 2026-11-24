@@ -265,13 +265,13 @@ export const AuthPage = () => {
 
           {/* Feedback Banners */}
           {errorMsg && (
-            <div className="p-2.5 bg-[#E47770]/15 border border-[#E47770] text-[#E47770] text-xs">
+            <div data-testid="auth-page-error-msg" className="p-2.5 bg-[#E47770]/15 border border-[#E47770] text-[#E47770] text-xs">
               {errorMsg}
             </div>
           )}
 
           {successMsg && (
-            <div className="p-2.5 bg-[#77C98B]/15 border border-[#77C98B] text-[#77C98B] text-xs flex items-center gap-2">
+            <div data-testid="auth-page-success-msg" className="p-2.5 bg-[#77C98B]/15 border border-[#77C98B] text-[#77C98B] text-xs flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{successMsg}</span>
             </div>
@@ -285,6 +285,7 @@ export const AuthPage = () => {
                 <label className="text-[10px] text-[#969B91] block mb-1">USERNAME</label>
                 <input
                   type="text"
+                  data-testid="auth-page-username-input"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="term-input"
@@ -299,6 +300,7 @@ export const AuthPage = () => {
                 <label className="text-[10px] text-[#969B91] block mb-1">EMAIL ADDRESS</label>
                 <input
                   type="email"
+                  data-testid="auth-page-email-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="term-input"
@@ -313,6 +315,7 @@ export const AuthPage = () => {
                 <label className="text-[10px] text-[#969B91] block mb-1">6-DIGIT VERIFICATION OTP</label>
                 <input
                   type="text"
+                  data-testid="auth-page-otp-input"
                   maxLength="6"
                   placeholder="e.g. 123456"
                   value={otpCode}
@@ -343,6 +346,7 @@ export const AuthPage = () => {
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    data-testid="auth-page-password-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="term-input pr-8"
@@ -365,6 +369,7 @@ export const AuthPage = () => {
                 <label className="text-[10px] text-[#969B91] block mb-1">CONFIRM PASSWORD</label>
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  data-testid="auth-page-confirm-password-input"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="term-input"
@@ -376,6 +381,7 @@ export const AuthPage = () => {
             {/* Submit Button */}
             <button
               type="submit"
+              data-testid="auth-page-submit-btn"
               disabled={loading}
               className="term-btn-primary w-full py-2.5 font-bold flex items-center justify-center gap-1.5 mt-2"
             >
@@ -420,6 +426,7 @@ export const AuthPage = () => {
 
               <button
                 type="button"
+                data-testid="auth-page-guest-btn"
                 onClick={handleEnterAsGuest}
                 className="w-full text-center py-2 text-xs text-[#C7F36B] hover:underline"
               >
@@ -434,6 +441,7 @@ export const AuthPage = () => {
               <div>
                 Don't have an institutional profile?{' '}
                 <button
+                  data-testid="auth-page-switch-register-btn"
                   onClick={() => switchMode('register')}
                   className="text-[#C7F36B] font-semibold hover:underline"
                 >
@@ -444,6 +452,7 @@ export const AuthPage = () => {
               <div>
                 Existing user?{' '}
                 <button
+                  data-testid="auth-page-switch-login-btn"
                   onClick={() => switchMode('login')}
                   className="text-[#C7F36B] font-semibold hover:underline"
                 >

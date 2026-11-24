@@ -70,6 +70,7 @@ export const PortfolioManager = ({
           </div>
 
           <button
+            data-testid="open-add-position-btn"
             onClick={() => setShowAddModal(true)}
             className="btn-primary text-xs font-mono px-4 py-2 flex items-center gap-2 self-stretch md:self-auto justify-center"
           >
@@ -82,10 +83,10 @@ export const PortfolioManager = ({
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
           <div className="bg-[#090d16] p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
             <span className="text-xs text-slate-400 font-medium">Total Portfolio Value</span>
-            <div className="mt-2 text-2xl font-black font-mono text-white">
+            <div data-testid="total-portfolio-value" className="mt-2 text-2xl font-black font-mono text-white">
               ${portfolio?.total_portfolio_value != null ? Number(portfolio.total_portfolio_value).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
             </div>
-            <span className="text-[11px] text-slate-400 font-mono mt-1 block">
+            <span data-testid="total-portfolio-cash" className="text-[11px] text-slate-400 font-mono mt-1 block">
               Cash: ${portfolio?.cash != null ? Number(portfolio.cash).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
             </span>
           </div>
@@ -208,7 +209,11 @@ export const PortfolioManager = ({
                   const isProfit = (pos.unrealized_pnl ?? 0) >= 0;
                   const sym = pos.symbol || 'ASSET';
                   return (
-                    <tr key={`${sym}-${idx}`} className="hover:bg-white/[0.03] transition-colors">
+                    <tr
+                      key={`${sym}-${idx}`}
+                      data-testid={`position-row-${sym}`}
+                      className="hover:bg-white/[0.03] transition-colors"
+                    >
                       <td className="px-5 py-3.5">
                         <div className="font-bold text-white text-sm">{sym}</div>
                         <div className="text-[11px] text-slate-400 truncate max-w-[140px]">{pos.name || `${sym} Holding`}</div>
@@ -228,6 +233,7 @@ export const PortfolioManager = ({
                       <td className="px-5 py-3.5 text-slate-300 font-medium">{pos.allocation_pct ?? 0}%</td>
                       <td className="px-5 py-3.5 text-right">
                         <button
+                          data-testid={`remove-position-btn-${sym}`}
                           onClick={() => onRemovePosition(sym)}
                           title="Liquidate / Remove Position"
                           className="p-1.5 rounded-lg hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors border border-transparent hover:border-rose-500/30"
@@ -246,7 +252,7 @@ export const PortfolioManager = ({
 
       {/* Add Stock Position Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div data-testid="add-position-modal" className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="glass-card modal-content max-w-md w-full p-6 border border-white/15 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -254,6 +260,7 @@ export const PortfolioManager = ({
                 Add Position to Portfolio
               </h3>
               <button
+                data-testid="add-position-modal-close"
                 onClick={() => setShowAddModal(false)}
                 className="text-slate-400 hover:text-white transition-colors"
               >
@@ -265,6 +272,7 @@ export const PortfolioManager = ({
               <div>
                 <label className="block text-xs font-mono text-slate-400 mb-1.5">Select Stock Ticker</label>
                 <select
+                  data-testid="add-position-symbol-select"
                   value={selectedStock}
                   onChange={(e) => setSelectedStock(e.target.value)}
                   className="w-full bg-[#090d16] border border-white/10 rounded-xl p-2.5 text-xs font-mono text-white focus:outline-none focus:border-cyan-400"
@@ -290,6 +298,7 @@ export const PortfolioManager = ({
                 <label className="block text-xs font-mono text-slate-400 mb-1.5">Number of Shares (Quantity)</label>
                 <input
                   type="number"
+                  data-testid="add-position-quantity-input"
                   min="1"
                   required
                   value={quantity}
@@ -304,6 +313,7 @@ export const PortfolioManager = ({
                 </label>
                 <input
                   type="number"
+                  data-testid="add-position-price-input"
                   step="0.01"
                   placeholder="e.g. 185.50"
                   value={buyPrice}
@@ -328,7 +338,11 @@ export const PortfolioManager = ({
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary text-xs font-mono px-4 py-2">
+                <button
+                  type="submit"
+                  data-testid="add-position-submit-btn"
+                  className="btn-primary text-xs font-mono px-4 py-2"
+                >
                   Confirm Purchase
                 </button>
               </div>

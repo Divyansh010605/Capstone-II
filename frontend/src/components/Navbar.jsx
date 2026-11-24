@@ -76,7 +76,7 @@ export const Navbar = ({
                 </span>
               </div>
               <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono mt-0.5">
-                <span className="flex items-center gap-1.5">
+                <span data-testid="backend-status" className="flex items-center gap-1.5">
                   <span className={`w-2 h-2 rounded-full ${isBackendOnline ? 'bg-emerald-400 animate-ping' : 'bg-emerald-400'}`}></span>
                   <span className={isBackendOnline ? 'text-emerald-400 font-medium' : 'text-slate-300'}>
                     {isBackendOnline ? 'FASTAPI LIVE' : 'FEED SYNCHRONIZED'}
@@ -91,6 +91,7 @@ export const Navbar = ({
           {/* Mobile Right Controls */}
           <div className="flex lg:hidden items-center gap-1.5">
             <button
+              data-testid="open-watchlist-btn-mobile"
               onClick={onOpenWatchlist}
               className="p-2 rounded-lg bg-white/5 border border-white/10 text-amber-400 hover:bg-white/10"
               title="Watchlist"
@@ -98,6 +99,7 @@ export const Navbar = ({
               <Bookmark className="w-4 h-4" />
             </button>
             <button
+              data-testid="open-auth-btn-mobile"
               onClick={onOpenAuth}
               className="p-2 rounded-lg bg-white/5 border border-white/10 text-cyan-400 hover:bg-white/10"
               title="Account"
@@ -106,6 +108,7 @@ export const Navbar = ({
             </button>
             {user && onLogout && (
               <button
+                data-testid="navbar-logout-btn-mobile"
                 onClick={onLogout}
                 className="p-2 rounded-lg bg-white/5 border border-rose-500/20 text-rose-400 hover:bg-rose-500/10"
                 title="Sign Out"
@@ -124,6 +127,7 @@ export const Navbar = ({
             return (
               <button
                 key={tab.id}
+                data-testid={`nav-tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
                 className={`tab-btn flex-1 sm:flex-initial text-xs ${isActive ? 'active' : ''}`}
               >
@@ -141,6 +145,7 @@ export const Navbar = ({
             {tickers.map((stock) => (
               <button
                 key={stock.symbol}
+                data-testid={`quick-ticker-${stock.symbol}`}
                 onClick={() => {
                   setSelectedSymbol(stock.symbol);
                   setSearchInput(stock.symbol);
@@ -160,6 +165,7 @@ export const Navbar = ({
           <form onSubmit={handleSearchSubmit} className="relative flex-1 sm:flex-initial">
             <input
               type="text"
+              data-testid="search-input"
               placeholder="Ticker (e.g. NVDA)..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value.toUpperCase())}
@@ -167,6 +173,7 @@ export const Navbar = ({
             />
             <button
               type="submit"
+              data-testid="search-submit"
               className="absolute right-2 top-2.5 text-slate-400 hover:text-cyan-400 transition-colors"
             >
               <Search className="w-3.5 h-3.5" />
@@ -176,6 +183,7 @@ export const Navbar = ({
           {/* Desktop Watchlist & Auth Buttons */}
           <div className="hidden lg:flex items-center gap-2">
             <button
+              data-testid="open-watchlist-btn"
               onClick={onOpenWatchlist}
               className="btn-secondary text-xs px-3 py-2 font-mono flex items-center gap-1.5 border-white/10 hover:border-amber-500/30"
             >
@@ -184,17 +192,19 @@ export const Navbar = ({
             </button>
 
             <button
+              data-testid="open-auth-btn"
               onClick={onOpenAuth}
               className={`btn-secondary text-xs px-3 py-2 font-mono flex items-center gap-1.5 border-white/10 ${
                 user ? 'hover:border-cyan-500/30' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20'
               }`}
             >
               <User className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{user ? user.username : 'Sign In / Register'}</span>
+              <span data-testid="navbar-user-label">{user ? user.username : 'Sign In / Register'}</span>
             </button>
 
             {user && onLogout && (
               <button
+                data-testid="navbar-logout-btn"
                 onClick={onLogout}
                 title="Sign Out"
                 className="btn-secondary text-xs px-2.5 py-2 font-mono flex items-center border-white/10 text-rose-400 hover:border-rose-500/30 hover:bg-rose-500/10 transition-colors"

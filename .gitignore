@@ -51,14 +51,33 @@ coverage.xml
 .ruff_cache/
 *.log
 
+# Selenium, UI Testing & Driver Artifacts
+tests_ui/screenshots/
+*.chromedriver
+chromedriver.exe
+geckodriver.exe
+msedgedriver.exe
+chromedriver.log
+geckodriver.log
+selenium-server*.jar
+test-results/
+playwright-report/
+allure-results/
+allure-report/
+junit.xml
+test_report.html
+report.html
+
 # ── 4. Node.js & React / Vite ──
 node_modules/
 frontend/node_modules/
 frontend/dist/
+frontend/dist-ssr/
 frontend/build/
 frontend/.vite/
 frontend/.cache/
 dist/
+dist-ssr/
 .vite/
 npm-debug.log*
 yarn-debug.log*

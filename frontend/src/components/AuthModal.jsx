@@ -220,6 +220,7 @@ export const AuthModal = ({
 
   return (
     <div
+      data-testid="auth-modal"
       onClick={onClose}
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn"
     >
@@ -244,6 +245,7 @@ export const AuthModal = ({
             </h3>
           </div>
           <button
+            data-testid="auth-modal-close"
             onClick={onClose}
             className="text-slate-400 hover:text-white transition-colors p-1"
           >
@@ -253,14 +255,14 @@ export const AuthModal = ({
 
         {/* Notifications */}
         {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono flex items-start gap-2">
+          <div data-testid="auth-error-msg" className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-start gap-2">
+          <div data-testid="auth-success-msg" className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
@@ -274,7 +276,7 @@ export const AuthModal = ({
                 <ShieldCheck className="w-4 h-4" />
                 Active Authenticated Session
               </div>
-              <div className="text-base font-bold text-white font-mono">{user.username}</div>
+              <div data-testid="auth-logged-in-username" className="text-base font-bold text-white font-mono">{user.username}</div>
               <div className="text-xs text-slate-400 font-mono">{user.email}</div>
               {user.full_name && (
                 <div className="text-xs text-slate-300">{user.full_name}</div>
@@ -285,6 +287,7 @@ export const AuthModal = ({
             </div>
 
             <button
+              data-testid="auth-logout-btn"
               onClick={() => {
                 onLogout();
                 onClose();
@@ -303,6 +306,7 @@ export const AuthModal = ({
               <div className="flex rounded-lg p-1 bg-[#050811] border border-white/10">
                 <button
                   type="button"
+                  data-testid="auth-tab-login"
                   onClick={() => switchMode('login')}
                   className={`flex-1 py-1.5 text-xs font-mono font-bold rounded-md transition-all ${
                     modalMode === 'login'
@@ -314,6 +318,7 @@ export const AuthModal = ({
                 </button>
                 <button
                   type="button"
+                  data-testid="auth-tab-register"
                   onClick={() => switchMode('register')}
                   className={`flex-1 py-1.5 text-xs font-mono font-bold rounded-md transition-all ${
                     modalMode === 'register'
@@ -336,6 +341,7 @@ export const AuthModal = ({
                   <div className="relative">
                     <input
                       type="text"
+                      data-testid="login-username-input"
                       required
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
@@ -359,6 +365,7 @@ export const AuthModal = ({
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
+                      data-testid="login-password-input"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -377,6 +384,7 @@ export const AuthModal = ({
 
                 <button
                   type="submit"
+                  data-testid="login-submit-btn"
                   disabled={loading}
                   className="w-full btn-primary text-xs font-mono py-2.5 justify-center flex items-center gap-2"
                 >
@@ -394,6 +402,7 @@ export const AuthModal = ({
                   <div className="relative">
                     <input
                       type="email"
+                      data-testid="register-email-input"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -409,6 +418,7 @@ export const AuthModal = ({
                   <div className="relative">
                     <input
                       type="text"
+                      data-testid="register-username-input"
                       required
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
@@ -424,6 +434,7 @@ export const AuthModal = ({
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
+                      data-testid="register-password-input"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -446,6 +457,7 @@ export const AuthModal = ({
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
+                      data-testid="register-confirm-password-input"
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
@@ -465,6 +477,7 @@ export const AuthModal = ({
 
                 <button
                   type="submit"
+                  data-testid="register-submit-btn"
                   disabled={loading}
                   className="w-full btn-primary text-xs font-mono py-2.5 justify-center flex items-center gap-2 mt-1"
                 >

@@ -49,7 +49,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
                 <h3 className="text-lg font-bold text-white tracking-tight">
                   Quantitative Risk Engine
                 </h3>
-                <span className={`text-xs px-3 py-0.5 rounded-full border font-mono font-bold tracking-wide ${categoryColor}`}>
+                <span data-testid="risk-category" className={`text-xs px-3 py-0.5 rounded-full border font-mono font-bold tracking-wide ${categoryColor}`}>
                   {category}
                 </span>
               </div>
@@ -63,7 +63,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
           <div className="flex items-center gap-4 bg-[#090d16] px-4 py-2.5 rounded-xl border border-white/10 shadow-inner self-stretch md:self-auto justify-between md:justify-start">
             <div>
               <div className="text-[10px] text-slate-400 font-mono tracking-wider uppercase">Risk Score</div>
-              <div className="text-xl font-black font-mono text-white">{score} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
+              <div data-testid="risk-score" className="text-xl font-black font-mono text-white">{score} <span className="text-xs text-slate-500 font-normal">/ 100</span></div>
             </div>
             <div className="w-24 bg-slate-800 h-2.5 rounded-full overflow-hidden border border-white/10">
               <div
@@ -84,7 +84,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
           <div className="bg-[#090d16] p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
             <span className="text-xs text-slate-400 font-medium">Annualized Volatility</span>
-            <div className="mt-2 text-2xl font-black font-mono text-white">
+            <div data-testid="stat-volatility" className="mt-2 text-2xl font-black font-mono text-white">
               {riskData.annualized_volatility_pct != null ? `${riskData.annualized_volatility_pct}%` : 'N/A'}
             </div>
             <span className="text-[11px] text-slate-500 font-mono mt-1 block">
@@ -94,7 +94,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
 
           <div className="bg-[#090d16] p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
             <span className="text-xs text-slate-400 font-medium">Maximum Drawdown</span>
-            <div className="mt-2 text-2xl font-black font-mono text-rose-400 flex items-center gap-1">
+            <div data-testid="stat-mdd" className="mt-2 text-2xl font-black font-mono text-rose-400 flex items-center gap-1">
               <ArrowDownRight className="w-6 h-6" />
               {riskData.maximum_drawdown_pct != null ? `${riskData.maximum_drawdown_pct}%` : 'N/A'}
             </div>
@@ -105,7 +105,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
 
           <div className="bg-[#090d16] p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
             <span className="text-xs text-slate-400 font-medium">Sharpe Ratio</span>
-            <div className="mt-2 text-2xl font-black font-mono text-cyan-400">
+            <div data-testid="stat-sharpe" className="mt-2 text-2xl font-black font-mono text-cyan-400">
               {riskData.sharpe_ratio != null ? riskData.sharpe_ratio : 'N/A'}
             </div>
             <span className="text-[11px] text-slate-500 font-mono mt-1 block">
@@ -115,7 +115,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
 
           <div className="bg-[#090d16] p-4 rounded-xl border border-white/5 relative overflow-hidden shadow-inner">
             <span className="text-xs text-slate-400 font-medium">Sortino Ratio</span>
-            <div className="mt-2 text-2xl font-black font-mono text-purple-400">
+            <div data-testid="stat-sortino" className="mt-2 text-2xl font-black font-mono text-purple-400">
               {riskData.sortino_ratio != null ? riskData.sortino_ratio : 'N/A'}
             </div>
             <span className="text-[11px] text-slate-500 font-mono mt-1 block">
@@ -136,7 +136,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
       {/* Value at Risk (VaR) & CVaR Comparison */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* 95% Confidence Level */}
-        <div className="glass-card p-5 sm:p-6 space-y-4">
+        <div data-testid="var-95-card" className="glass-card p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <h4 className="text-sm font-bold text-white flex items-center gap-2">
               <Activity className="w-4 h-4 text-cyan-400" />
@@ -179,7 +179,7 @@ export const RiskDashboard = ({ riskData, symbol }) => {
         </div>
 
         {/* 99% Tail Stress Confidence Level */}
-        <div className="glass-card p-5 sm:p-6 space-y-4">
+        <div data-testid="var-99-card" className="glass-card p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <h4 className="text-sm font-bold text-white flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-rose-400" />

@@ -32,6 +32,7 @@ export const WatchlistModal = ({
 
   return (
     <div
+      data-testid="watchlist-modal"
       onClick={onClose}
       className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn"
     >
@@ -46,6 +47,7 @@ export const WatchlistModal = ({
             <h3 className="text-base font-bold text-white font-mono tracking-tight">Market Watchlist</h3>
           </div>
           <button
+            data-testid="watchlist-modal-close"
             onClick={onClose}
             className="text-slate-400 hover:text-white transition-colors p-1"
           >
@@ -57,6 +59,7 @@ export const WatchlistModal = ({
         <form onSubmit={handleAdd} className="flex gap-2">
           <input
             type="text"
+            data-testid="watchlist-add-input"
             placeholder="Add ticker symbol (e.g. MSFT, NVDA, SPY)..."
             value={newSymbol}
             onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
@@ -64,6 +67,7 @@ export const WatchlistModal = ({
           />
           <button
             type="submit"
+            data-testid="watchlist-add-btn"
             className="btn-primary text-xs font-mono px-4 py-2.5 flex items-center gap-1.5"
           >
             <Plus className="w-4 h-4" />
@@ -93,9 +97,11 @@ export const WatchlistModal = ({
               return (
                 <div
                   key={`${sym}-${idx}`}
+                  data-testid={`watchlist-item-${sym}`}
                   className="p-3.5 rounded-xl bg-[#090d16] border border-white/5 hover:border-white/20 transition-all flex items-center justify-between group"
                 >
                   <div
+                    data-testid={`watchlist-select-${sym}`}
                     onClick={() => {
                       onSelectStock(sym);
                       onClose();
@@ -130,6 +136,7 @@ export const WatchlistModal = ({
                     </div>
 
                     <button
+                      data-testid={`watchlist-remove-${sym}`}
                       onClick={() => onRemoveFromWatchlist(sym)}
                       className="p-2 rounded-lg hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 transition-colors border border-transparent hover:border-rose-500/30"
                       title="Remove from Watchlist"

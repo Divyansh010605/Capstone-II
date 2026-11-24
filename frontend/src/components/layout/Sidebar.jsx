@@ -56,10 +56,12 @@ export const Sidebar = () => {
         <nav className="flex flex-col gap-0.5 px-1.5">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
+            const navId = item.path.replace('/', '');
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
+                data-testid={`sidebar-nav-${navId}`}
                 title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
                   `flex items-center gap-2.5 px-2.5 py-2 text-xs font-mono transition-colors rounded-none border-l-2 ${

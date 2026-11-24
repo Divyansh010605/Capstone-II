@@ -100,6 +100,7 @@ export const PortfolioPage = () => {
         </div>
 
         <button
+          data-testid="portfolio-page-execute-btn"
           onClick={() => handleOpenOrder('AAPL', 'BUY')}
           className="term-btn-primary text-xs self-start md:self-auto flex items-center gap-1.5"
         >
@@ -171,7 +172,7 @@ export const PortfolioPage = () => {
                   positions.map((pos) => {
                     const isGain = (pos.unrealized_pnl || 0) >= 0;
                     return (
-                      <tr key={pos.symbol}>
+                      <tr key={pos.symbol} data-testid={`portfolio-page-position-${pos.symbol}`}>
                         <td
                           onClick={() => changeSymbol(pos.symbol)}
                           className="cursor-pointer hover:text-[#C7F36B]"
@@ -207,6 +208,7 @@ export const PortfolioPage = () => {
                               SELL
                             </button>
                             <button
+                              data-testid={`portfolio-page-liquidate-${pos.symbol}`}
                               onClick={() => handleLiquidate(pos.symbol)}
                               title="Liquidate Entire Position"
                               className="p-1 hover:text-[#E47770] text-[#969B91]"
@@ -291,6 +293,7 @@ export const PortfolioPage = () => {
               <div>
                 <label className="text-[10px] text-[#969B91] block mb-1">SECURITY TICKER</label>
                 <select
+                  data-testid="portfolio-modal-symbol"
                   value={ticker}
                   onChange={(e) => setTicker(e.target.value)}
                   className="term-input"
@@ -308,6 +311,7 @@ export const PortfolioPage = () => {
                 <label className="text-[10px] text-[#969B91] block mb-1">QUANTITY (SHARES)</label>
                 <input
                   type="number"
+                  data-testid="portfolio-modal-shares"
                   min="1"
                   step="1"
                   value={shares}
@@ -343,6 +347,7 @@ export const PortfolioPage = () => {
                 </button>
                 <button
                   type="submit"
+                  data-testid="portfolio-modal-submit"
                   disabled={submitting}
                   className="term-btn-primary flex-1 py-2 text-xs font-bold"
                 >

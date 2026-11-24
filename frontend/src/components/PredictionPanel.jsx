@@ -245,6 +245,7 @@ export const PredictionPanel = ({
               {['ensemble', 'transformer', 'lstm', 'gru'].map((m) => (
                 <button
                   key={m}
+                  data-testid={`model-btn-${m}`}
                   onClick={() => setSelectedModel(m)}
                   className={`px-3 py-1 rounded-lg capitalize font-semibold transition-all ${
                     selectedModel === m
@@ -262,6 +263,7 @@ export const PredictionPanel = ({
               {[3, 7, 14, 30].map((h) => (
                 <button
                   key={h}
+                  data-testid={`horizon-btn-${h}`}
                   onClick={() => setSelectedHorizon(h)}
                   className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                     selectedHorizon === h
@@ -276,6 +278,7 @@ export const PredictionPanel = ({
 
             {/* Refresh Button */}
             <button
+              data-testid="prediction-refresh-btn"
               onClick={onRefresh}
               disabled={loading}
               className="btn-primary text-xs font-mono px-3.5 py-1.5 flex items-center gap-1.5"
@@ -298,6 +301,7 @@ export const PredictionPanel = ({
               {trend === 'Bearish' && <ArrowDownRight className="w-6 h-6 text-rose-400" />}
               {trend === 'Sideways' && <Minus className="w-6 h-6 text-amber-400" />}
               <span
+                data-testid="prediction-trend"
                 className={`text-xl font-black font-mono tracking-tight ${
                   trend === 'Bullish'
                     ? 'text-emerald-400'
@@ -322,7 +326,7 @@ export const PredictionPanel = ({
               <span>Target Price ({selectedHorizon}D)</span>
               <Target className="w-3.5 h-3.5 text-blue-400" />
             </div>
-            <div className="mt-2 text-2xl font-black font-mono text-white">
+            <div data-testid="prediction-target-price" className="mt-2 text-2xl font-black font-mono text-white">
               ${Number(targetPrice || 0).toFixed(2)}
             </div>
             <div className="text-[11px] text-slate-400 font-mono mt-1">
@@ -335,7 +339,7 @@ export const PredictionPanel = ({
               <span>Statistical Confidence</span>
               <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
             </div>
-            <div className="mt-2 text-2xl font-black font-mono text-cyan-400">
+            <div data-testid="prediction-confidence" className="mt-2 text-2xl font-black font-mono text-cyan-400">
               {predictionData?.confidence_level_pct || 95}%
             </div>
             <div className="text-[11px] text-slate-400 font-mono mt-1">
@@ -394,12 +398,12 @@ export const PredictionPanel = ({
               <span>No forecast points available. Click Re-Run above to generate predictions.</span>
             </div>
           ) : (
-            <canvas ref={chartCanvasRef} className="w-full block" />
+            <canvas data-testid="forecast-canvas" ref={chartCanvasRef} className="w-full block" />
           )}
         </div>
 
         {/* Forecast Data Breakdown Table */}
-        <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#070a10]">
+        <div data-testid="forecast-table" className="overflow-x-auto rounded-xl border border-white/10 bg-[#070a10]">
           <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
             <span className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />

@@ -306,9 +306,9 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod, error
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-white/10">
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-black font-mono tracking-tight text-white">{symbol}</h2>
+            <h2 data-testid="stock-symbol-title" className="text-2xl font-black font-mono tracking-tight text-white">{symbol}</h2>
             {activeRecord && typeof activeRecord.close === 'number' && (
-              <span className="text-3xl font-extrabold font-mono text-white tracking-tight">
+              <span data-testid="stock-price-display" className="text-3xl font-extrabold font-mono text-white tracking-tight">
                 ${activeRecord.close.toFixed(2)}
               </span>
             )}
@@ -345,6 +345,7 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod, error
             {['1mo', '3mo', '6mo', '1y', '5y'].map((p) => (
               <button
                 key={p}
+                data-testid={`timeframe-${p}`}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1 rounded-lg transition-all font-semibold ${
                   period === p
@@ -360,6 +361,7 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod, error
           {/* Indicator Toggles */}
           <div className="flex items-center gap-1.5">
             <button
+              data-testid="toggle-sma"
               onClick={() => setShowSMA(!showSMA)}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium border transition-all flex items-center gap-1.5 ${
                 showSMA
@@ -372,6 +374,7 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod, error
             </button>
 
             <button
+              data-testid="toggle-ema"
               onClick={() => setShowEMA(!showEMA)}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium border transition-all flex items-center gap-1.5 ${
                 showEMA
@@ -384,6 +387,7 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod, error
             </button>
 
             <button
+              data-testid="toggle-bb"
               onClick={() => setShowBB(!showBB)}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium border transition-all flex items-center gap-1.5 ${
                 showBB
@@ -434,6 +438,7 @@ export const CandlestickChart = ({ historyData, symbol, period, setPeriod, error
           )
         ) : (
           <canvas
+            data-testid="candlestick-canvas"
             ref={canvasRef}
             onMouseMove={handleMouseMove}
             className="cursor-crosshair w-full block"

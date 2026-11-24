@@ -63,6 +63,7 @@ export const PredictionsPage = () => {
         </div>
 
         <button
+          data-testid="predictions-page-refresh-btn"
           onClick={refreshMarket}
           disabled={loadingPred}
           className="term-btn-primary text-xs self-start md:self-auto"
@@ -83,6 +84,7 @@ export const PredictionsPage = () => {
             {HORIZONS.map((h) => (
               <button
                 key={h}
+                data-testid={`predictions-page-horizon-${h}`}
                 onClick={() => setSelectedHorizon(h)}
                 className={`py-2 text-xs font-mono font-bold transition-colors border ${
                   selectedHorizon === h
@@ -105,6 +107,7 @@ export const PredictionsPage = () => {
             {MODELS.map((m) => (
               <button
                 key={m.id}
+                data-testid={`predictions-page-model-${m.id}`}
                 onClick={() => setSelectedModel(m.id)}
                 className={`py-2 px-1 text-[11px] font-mono font-bold transition-colors border truncate ${
                   selectedModel === m.id

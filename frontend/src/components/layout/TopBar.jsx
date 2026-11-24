@@ -77,6 +77,7 @@ export const TopBar = () => {
             <Search className="w-3.5 h-3.5 text-[#969B91] mr-1.5" />
             <input
               type="text"
+              data-testid="topbar-search-input"
               placeholder={`ACTIVE: ${selectedSymbol}`}
               value={searchInput}
               onChange={(e) => {
@@ -184,7 +185,7 @@ export const TopBar = () => {
 
         {/* User Session Profile */}
         {user ? (
-          <div className="flex items-center gap-2 pl-2 border-l border-[#343B33]">
+          <div data-testid="topbar-user-badge" className="flex items-center gap-2 pl-2 border-l border-[#343B33]">
             <div className="flex items-center gap-1.5 text-xs font-mono text-[#E9E8DF]">
               <div className="w-6 h-6 bg-[#202720] border border-[#343B33] flex items-center justify-center text-[#C7F36B] font-bold text-[11px]">
                 {user.username ? user.username.slice(0, 2).toUpperCase() : 'TR'}
@@ -192,6 +193,7 @@ export const TopBar = () => {
               <span className="hidden md:inline font-semibold text-xs">{user.username}</span>
             </div>
             <button
+              data-testid="topbar-logout-btn"
               onClick={() => {
                 logout();
                 navigate('/auth');
@@ -204,6 +206,7 @@ export const TopBar = () => {
           </div>
         ) : (
           <button
+            data-testid="topbar-signin-btn"
             onClick={() => navigate('/auth')}
             className="term-btn-primary text-[11px] py-1 px-2.5"
           >
