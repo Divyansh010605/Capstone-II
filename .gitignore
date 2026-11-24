@@ -33,6 +33,8 @@ ENV/
 env/
 env.bak/
 venv.bak/
+virtualenv/
+.virtualenv/
 
 # ── 3. Testing, Coverage & Linters ──
 .pytest_cache/
@@ -51,24 +53,35 @@ coverage.xml
 .ruff_cache/
 *.log
 
-# Selenium, UI Testing & Driver Artifacts
+# Test Reports & Pipeline Outputs
+reports/
+reports/*.xml
+reports/*.html
+junit.xml
+test_report.html
+report.html
+test-results/
+allure-results/
+allure-report/
+playwright-report/
+
+# ── 4. Selenium, WebDriver & UI Test Artifacts ──
+.wdm/
 tests_ui/screenshots/
+backend/tests/selenium/screenshots/
+screenshots/
 *.chromedriver
+chromedriver
 chromedriver.exe
+geckodriver
 geckodriver.exe
+msedgedriver
 msedgedriver.exe
 chromedriver.log
 geckodriver.log
 selenium-server*.jar
-test-results/
-playwright-report/
-allure-results/
-allure-report/
-junit.xml
-test_report.html
-report.html
 
-# ── 4. Node.js & React / Vite ──
+# ── 5. Node.js & React / Vite ──
 node_modules/
 frontend/node_modules/
 frontend/dist/
@@ -85,33 +98,61 @@ yarn-error.log*
 .pnpm-debug.log*
 lerna-debug.log*
 
-# ── 5. Environment & Sensitive Credentials ──
-# Ignore local environment files but keep the documentation template
+# ── 6. Environment & Sensitive Credentials ──
+# Ignore local environment configurations but preserve documentation template
 .env
 .env.local
 .env.*.local
 .env.development
 .env.test
 .env.production
+backend/.env
+backend/.env.local
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
 !.env.example
+!backend/.env.example
+!frontend/.env.example
 
-# ── 6. Databases & Local Volume Mounts ──
+# Sensitive keys and certificates (preserves committed public dev certs)
+*.key.bak
+*.pem.bak
+*.pfx
+*.p12
+id_rsa
+id_rsa.pub
+id_ed25519
+
+# ── 7. Databases & Local Persistent Storage ──
 *.sqlite
 *.sqlite3
 *.db
 mongodb_data/
 data/
 dumps/
+*.dump
+mongo-dump/
 
-# ── 7. Model Checkpoints & Large Temporary Dumps ──
+# ── 8. Machine Learning, PyTorch & Training Artifacts ──
 *.pt.bak
 *.pt.tmp
 *.ckpt.bak
 *.pkl.bak
 ai_engine/checkpoints/*.tmp
 ai_engine/checkpoints/*.bak
+runs/
+lightning_logs/
+events.out.tfevents.*
+.tensorboard/
 
-# ── 8. IDEs & Text Editors ──
+# Jupyter Notebooks & Temporary Data
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+scratch/
+
+# ── 9. IDEs & Text Editors ──
 .vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -123,8 +164,10 @@ ai_engine/checkpoints/*.bak
 *~
 *.sublime-workspace
 *.sublime-project
+.cursor/
+.cursorrules.bak
 
-# ── 9. Operating System Files ──
+# ── 10. Operating System Files ──
 # Windows
 Thumbs.db
 Thumbs.db:encryptable
@@ -151,6 +194,8 @@ $RECYCLE.BIN/
 .directory
 .Trash-*
 
-# ── 10. CI / CD & Docker ──
+# ── 11. CI / CD, Docker & Local Overrides ──
 .docker/
 .jenkins/
+docker-compose.override.yml
+docker-compose.override.yaml
