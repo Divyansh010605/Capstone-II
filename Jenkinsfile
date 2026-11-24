@@ -24,6 +24,7 @@ pipeline {
         CI = 'true'
         PIP_DISABLE_PIP_VERSION_CHECK = '1'
         PIP_NO_INPUT = '1'
+        PATH = "C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\nodejs;C:\\Program Files\\Docker\\Docker\\resources\\bin;${env.PATH}"
     }
 
     stages {
@@ -80,8 +81,9 @@ pipeline {
                     } else {
                         bat '''
                             @echo off
-                            python --version
-                            pip --version
+                            set "PATH=C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\nodejs;C:\\Program Files\\Docker\\Docker\\resources\\bin;%PATH%"
+                            where python >nul 2>&1 && python --version || py --version
+                            where pip >nul 2>&1 && pip --version || py -m pip --version
                             node --version
                             npm --version
                             docker --version
@@ -111,7 +113,12 @@ pipeline {
                     } else {
                         bat '''
                             @echo off
-                            python -m pip install -r backend\\requirements.txt
+                            set "PATH=C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\nodejs;C:\\Program Files\\Docker\\Docker\\resources\\bin;%PATH%"
+                            where python >nul 2>&1 && (
+                                python -m pip install -r backend\\requirements.txt
+                            ) || (
+                                py -m pip install -r backend\\requirements.txt
+                            )
                             if errorlevel 1 exit /b 1
                         '''
                     }
@@ -140,12 +147,20 @@ pipeline {
                     } else {
                         bat '''
                             @echo off
+                            set "PATH=C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\nodejs;C:\\Program Files\\Docker\\Docker\\resources\\bin;%PATH%"
                             if not exist reports mkdir reports
 
-                            python -m pytest backend\\tests ^
-                                -v ^
-                                --tb=short ^
-                                --junitxml=reports\\backend-results.xml
+                            where python >nul 2>&1 && (
+                                python -m pytest backend\\tests ^
+                                    -v ^
+                                    --tb=short ^
+                                    --junitxml=reports\\backend-results.xml
+                            ) || (
+                                py -m pytest backend\\tests ^
+                                    -v ^
+                                    --tb=short ^
+                                    --junitxml=reports\\backend-results.xml
+                            )
 
                             if errorlevel 1 exit /b 1
                         '''
@@ -171,6 +186,7 @@ pipeline {
                         } else {
                             bat '''
                                 @echo off
+                                set "PATH=C:\\Program Files\\nodejs;%PATH%"
                                 call npm install --no-audit --no-fund
                                 if errorlevel 1 exit /b 1
                             '''
@@ -194,6 +210,7 @@ pipeline {
                         } else {
                             bat '''
                                 @echo off
+                                set "PATH=C:\\Program Files\\nodejs;%PATH%"
                                 call npm run build
                                 if errorlevel 1 exit /b 1
                             '''
