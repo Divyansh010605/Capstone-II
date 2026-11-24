@@ -11,6 +11,7 @@ import {
   Radio,
   Sparkles,
   LogOut,
+  FileCode,
 } from 'lucide-react';
 
 export const Navbar = ({
@@ -106,6 +107,16 @@ export const Navbar = ({
             >
               <User className="w-4 h-4" />
             </button>
+            <a
+              href="http://localhost:8000/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="navbar-swagger-btn-mobile"
+              className="p-2 rounded-lg bg-white/5 border border-cyan-500/20 text-cyan-400 hover:bg-white/10"
+              title="Native Swagger UI (/docs)"
+            >
+              <FileCode className="w-4 h-4" />
+            </a>
             {user && onLogout && (
               <button
                 data-testid="navbar-logout-btn-mobile"
@@ -182,6 +193,18 @@ export const Navbar = ({
 
           {/* Desktop Watchlist & Auth Buttons */}
           <div className="hidden lg:flex items-center gap-2">
+            <a
+              href="http://localhost:8000/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="navbar-swagger-btn"
+              className="btn-secondary text-xs px-2.5 py-2 font-mono flex items-center gap-1.5 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+              title="Open Native FastAPI Swagger UI (/docs)"
+            >
+              <FileCode className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Swagger UI</span>
+            </a>
+
             <button
               data-testid="open-watchlist-btn"
               onClick={onOpenWatchlist}

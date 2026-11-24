@@ -11,6 +11,7 @@ import {
   Server,
   CheckCircle2,
   FileCode,
+  ExternalLink,
 } from 'lucide-react';
 import { useTerminal } from '../context/TerminalContext';
 import { useNavigate } from 'react-router-dom';
@@ -139,13 +140,22 @@ export const SettingsPage = () => {
             </div>
           </div>
 
-          <div className="pt-2 flex gap-2 border-t border-[#242B24]">
-            <button
-              onClick={() => navigate('/docs')}
-              className="term-btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+          <div className="pt-2 flex flex-wrap gap-2 border-t border-[#242B24]">
+            <a
+              href="http://localhost:8000/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="term-btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 font-bold"
             >
               <FileCode className="w-3.5 h-3.5" />
-              <span>EXPLORE SWAGGER API & OPENAPI CONSOLE</span>
+              <span>NATIVE SWAGGER UI (/docs)</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+            <button
+              onClick={() => navigate('/docs')}
+              className="term-btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
+            >
+              <span>API DOCS & POSTMAN CENTER</span>
             </button>
           </div>
         </div>

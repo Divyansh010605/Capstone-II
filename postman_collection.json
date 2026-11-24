@@ -1,0 +1,858 @@
+{
+  "info": {
+    "name": "AlphaQuant AI - Stock Prediction & Risk Analysis API",
+    "_postman_id": "c8e1a8b2-4d7a-4c28-971a-289b4f2c0199",
+    "description": "Comprehensive production Postman collection for Stock Market AI Trend Forecasting, Quantitative Risk Analysis, Virtual Portfolios, and Sentiment Scoring.\n\n### Quick Start Guide:\n1. Ensure the backend is running (uvicorn backend.app.main:app --host 0.0.0.0 --port 8000).\n2. Run 'Authentication -> Login (Auto-Captures Bearer Token)'. The pre-configured test script will automatically store the JWT Bearer token into {{token}}.\n3. All authenticated requests (Portfolio, Watchlist, User Profile) will automatically inherit this Bearer token.\n4. You can use the exact same credentials (demotrader / demopass or newly registered users) in the React Web Application (http://localhost:5173 or http://localhost:3000).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "symbol",
+      "value": "AAPL",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health & Diagnostics",
+      "item": [
+        {
+          "name": "Root System Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ""
+              ]
+            }
+          }
+        },
+        {
+          "name": "Microservices Health Diagnostic",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Authentication",
+      "item": [
+        {
+          "name": "Login (Auto-Captures Bearer Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.environment.set('token', jsonData.access_token);",
+                  "    pm.collectionVariables.set('token', jsonData.access_token);",
+                  "    console.log('JWT Access Token captured successfully:', jsonData.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"demotrader\",\n  \"password\": \"demopass\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Register New Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"quant_researcher\",\n  \"email\": \"quant@institutional.ai\",\n  \"password\": \"demopassword123\",\n  \"confirm_password\": \"demopassword123\",\n  \"full_name\": \"Lead Quantitative Researcher\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password (Dispatch OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forgot-password"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@example.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-otp"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reset Password with OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@example.com\",\n  \"otp\": \"123456\",\n  \"new_password\": \"newsecurepassword123\",\n  \"confirm_password\": \"newsecurepassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "reset-password"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Stocks Universe",
+      "item": [
+        {
+          "name": "List Tracked Stock Universe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stocks"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Stock Profile Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stocks/{{symbol}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stocks",
+                "{{symbol}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Market Data",
+      "item": [
+        {
+          "name": "Get Historical OHLCV Candles & Technical Indicators",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/market/history/{{symbol}}?period=1y&interval=1d",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "market",
+                "history",
+                "{{symbol}}"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "1y"
+                },
+                {
+                  "key": "interval",
+                  "value": "1d"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. AI Predictions",
+      "item": [
+        {
+          "name": "List Forecasting Models Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/predictions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "predictions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Generate Predictions - Stacking Meta-Ensemble (7-day)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/predictions/{{symbol}}?horizon=7&model=ensemble",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "predictions",
+                "{{symbol}}"
+              ],
+              "query": [
+                {
+                  "key": "horizon",
+                  "value": "7"
+                },
+                {
+                  "key": "model",
+                  "value": "ensemble"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Generate Predictions - Temporal Transformer (14-day)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/predictions/{{symbol}}?horizon=14&model=transformer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "predictions",
+                "{{symbol}}"
+              ],
+              "query": [
+                {
+                  "key": "horizon",
+                  "value": "14"
+                },
+                {
+                  "key": "model",
+                  "value": "transformer"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Generate Predictions - LSTM Neural Network (3-day)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/predictions/{{symbol}}?horizon=3&model=lstm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "predictions",
+                "{{symbol}}"
+              ],
+              "query": [
+                {
+                  "key": "horizon",
+                  "value": "3"
+                },
+                {
+                  "key": "model",
+                  "value": "lstm"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Generate Predictions - GRU Neural Network (30-day)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/predictions/{{symbol}}?horizon=30&model=gru",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "predictions",
+                "{{symbol}}"
+              ],
+              "query": [
+                {
+                  "key": "horizon",
+                  "value": "30"
+                },
+                {
+                  "key": "model",
+                  "value": "gru"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Financial Risk Analysis",
+      "item": [
+        {
+          "name": "Risk Methodology Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/risk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "risk"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Single Stock Risk Profile (VaR, CVaR, Sharpe, Drawdown)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/risk/{{symbol}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "risk",
+                "{{symbol}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Multi-Asset Portfolio Risk & Correlation Matrix",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"holdings\": [\n    {\n      \"symbol\": \"AAPL\",\n      \"weight\": 0.35\n    },\n    {\n      \"symbol\": \"MSFT\",\n      \"weight\": 0.35\n    },\n    {\n      \"symbol\": \"NVDA\",\n      \"weight\": 0.3\n    }\n  ],\n  \"initial_capital\": 100000.0,\n  \"confidence_level\": 0.95,\n  \"time_horizon_days\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/risk/portfolio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "risk",
+                "portfolio"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Portfolio Management",
+      "item": [
+        {
+          "name": "Get Default Portfolio Summary",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portfolio"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Virtual Portfolio",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Quant Alpha Macro Fund\",\n  \"description\": \"Deep learning algorithmic equity allocation\",\n  \"initial_capital\": 100000.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portfolio"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Portfolio By ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio/default-demo-portfolio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portfolio",
+                "default-demo-portfolio"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buy Stock Position",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"NVDA\",\n  \"shares\": 15.0,\n  \"action\": \"BUY\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio/default-demo-portfolio/positions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portfolio",
+                "default-demo-portfolio",
+                "positions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sell Stock Position",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"AAPL\",\n  \"shares\": 5.0,\n  \"action\": \"SELL\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/portfolio/default-demo-portfolio/sell",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portfolio",
+                "default-demo-portfolio",
+                "sell"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Watchlist",
+      "item": [
+        {
+          "name": "Get User Watchlist",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/watchlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "watchlist"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Symbol To Watchlist",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"NVDA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/watchlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "watchlist"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove Symbol From Watchlist",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/watchlist/NVDA",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "watchlist",
+                "NVDA"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Market Sentiment",
+      "item": [
+        {
+          "name": "Sentiment Engine Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sentiment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sentiment"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fetch & Analyze Real-Time News Sentiment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sentiment/{{symbol}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sentiment",
+                "{{symbol}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

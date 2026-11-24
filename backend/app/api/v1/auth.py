@@ -28,7 +28,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-@router.post("/register/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/register/", response_model=UserOut, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def register(user_in: UserCreate, db=Depends(get_database)):
     """Register a new user account with optional confirm password check."""
     # Check confirm password if provided
@@ -75,8 +75,60 @@ async def register(user_in: UserCreate, db=Depends(get_database)):
     return UserOut(**user_record)
 
 
-@router.post("/login", response_model=TokenResponse)
-@router.post("/login/", response_model=TokenResponse)
+LOGIN_OPENAPI_EXTRA = {
+    "requestBody": {
+        "description": "User login credentials. Supports JSON and OAuth2 Form. Default demo account: demotrader / demopass.",
+        "required": True,
+        "content": {
+            "application/json": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "username": {
+                            "type": "string",
+                            "example": "demotrader",
+                            "description": "Username or registered email address",
+                        },
+                        "password": {
+                            "type": "string",
+                            "example": "demopass",
+                            "description": "User password",
+                        },
+                    },
+                    "required": ["username", "password"],
+                }
+            },
+            "application/x-www-form-urlencoded": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "username": {
+                            "type": "string",
+                            "example": "demotrader",
+                            "description": "OAuth2 username",
+                        },
+                        "password": {
+                            "type": "string",
+                            "example": "demopass",
+                            "description": "OAuth2 password",
+                        },
+                    },
+                    "required": ["username", "password"],
+                }
+            },
+        },
+    }
+}
+
+
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    summary="User Login (Bearer Token Issuance)",
+    description="Authenticate user via OAuth2 form or JSON payload. Returns JWT access token for Swagger Authorize and Postman.",
+    openapi_extra=LOGIN_OPENAPI_EXTRA,
+)
+@router.post("/login/", response_model=TokenResponse, include_in_schema=False)
 async def login(
     request: Request,
     db=Depends(get_database),
@@ -151,7 +203,7 @@ async def login(
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
-@router.post("/forgot-password/", response_model=MessageResponse)
+@router.post("/forgot-password/", response_model=MessageResponse, include_in_schema=False)
 async def forgot_password(req: ForgotPasswordRequest, db=Depends(get_database)):
     """
     Step 1 of Password Reset:
@@ -190,7 +242,7 @@ async def forgot_password(req: ForgotPasswordRequest, db=Depends(get_database)):
 
 
 @router.post("/verify-otp", response_model=MessageResponse)
-@router.post("/verify-otp/", response_model=MessageResponse)
+@router.post("/verify-otp/", response_model=MessageResponse, include_in_schema=False)
 async def verify_otp(req: VerifyOtpRequest, db=Depends(get_database)):
     """Pre-validate the 6-digit OTP before resetting password."""
     is_valid, msg = await email_otp_service.verify_otp(req.email, req.otp, db=db)
@@ -203,7 +255,7 @@ async def verify_otp(req: VerifyOtpRequest, db=Depends(get_database)):
 
 
 @router.post("/reset-password", response_model=MessageResponse)
-@router.post("/reset-password/", response_model=MessageResponse)
+@router.post("/reset-password/", response_model=MessageResponse, include_in_schema=False)
 async def reset_password(req: ResetPasswordRequest, db=Depends(get_database)):
     """
     Step 2 of Password Reset:
@@ -259,7 +311,7 @@ async def reset_password(req: ResetPasswordRequest, db=Depends(get_database)):
 
 
 @router.get("/oauth/config")
-@router.get("/oauth/config/")
+@router.get("/oauth/config/", include_in_schema=False)
 async def get_oauth_config():
     """Return configured OAuth Client IDs for client-side redirection."""
     return {
@@ -269,7 +321,7 @@ async def get_oauth_config():
 
 
 @router.post("/oauth/{provider}", response_model=TokenResponse)
-@router.post("/oauth/{provider}/", response_model=TokenResponse)
+@router.post("/oauth/{provider}/", response_model=TokenResponse, include_in_schema=False)
 async def oauth_login(provider: str, req: OAuthLoginRequest, db=Depends(get_database)):
     """
     Authenticate or auto-register via Google or GitHub OAuth.
@@ -407,7 +459,7 @@ async def oauth_login(provider: str, req: OAuthLoginRequest, db=Depends(get_data
 
 
 @router.get("/me", response_model=UserOut)
-@router.get("/me/", response_model=UserOut)
+@router.get("/me/", response_model=UserOut, include_in_schema=False)
 async def get_current_user_profile(current_user: dict = Depends(get_current_user)):
     """Return the profile of the authenticated user."""
     return UserOut(

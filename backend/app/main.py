@@ -14,12 +14,15 @@ Features:
 """
 
 import time
+import json
 import logging
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.openapi.utils import get_openapi
 
 from backend.app.core.config import settings
 from backend.app.core.database import db_manager
@@ -153,7 +156,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # Health check endpoints
-@app.get("/", tags=["Health"])
+@app.get("/", tags=["Health"], summary="Root Service Health Status")
 async def root():
     return {
         "project": settings.PROJECT_NAME,
@@ -161,10 +164,12 @@ async def root():
         "version": "2.0.0",
         "documentation": "/docs",
         "redoc": "/redoc",
+        "openapi_schema": "/openapi.json",
+        "postman_collection": "/api/v1/export/postman",
     }
 
 
-@app.get("/health", tags=["Health"])
+@app.get("/health", tags=["Health"], summary="System & Microservices Diagnostics")
 async def health_check():
     return {
         "status": "healthy",
@@ -179,10 +184,99 @@ async def health_check():
     }
 
 
-# Include Routers under /api/v1, /api, and root /
+# Export Endpoints for Postman Integration
+@app.get(
+    "/api/v1/export/postman",
+    tags=["Health"],
+    summary="Download Postman Collection v2.1",
+    description="Export complete ready-to-import Postman Collection with automated JWT Bearer token capture.",
+)
+@app.get("/postman.json", include_in_schema=False)
+async def export_postman_collection():
+    """Download ready-to-import Postman Collection v2.1.0."""
+    candidates = [
+        Path("postman_collection.json"),
+        Path(__file__).resolve().parent.parent.parent / "postman_collection.json",
+    ]
+    for p in candidates:
+        if p.is_file():
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return JSONResponse(
+                content=data,
+                headers={"Content-Disposition": 'attachment; filename="postman_collection.json"'},
+            )
+    return JSONResponse(status_code=404, content={"detail": "postman_collection.json not found"})
+
+
+@app.get(
+    "/api/v1/export/postman-environment",
+    tags=["Health"],
+    summary="Download Postman Environment Variables",
+    description="Export local development environment variables (baseUrl, symbol, credentials).",
+)
+@app.get("/postman_environment.json", include_in_schema=False)
+async def export_postman_environment():
+    """Download ready-to-import Postman Environment variables."""
+    candidates = [
+        Path("postman_environment.json"),
+        Path(__file__).resolve().parent.parent.parent / "postman_environment.json",
+    ]
+    for p in candidates:
+        if p.is_file():
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return JSONResponse(
+                content=data,
+                headers={"Content-Disposition": 'attachment; filename="postman_environment.json"'},
+            )
+    return JSONResponse(status_code=404, content={"detail": "postman_environment.json not found"})
+
+
+# Include Routers: Primary /api/v1 in OpenAPI schema, aliases excluded to keep Swagger & Postman clean
 app.include_router(api_router, prefix=settings.API_V1_STR)
-app.include_router(api_router, prefix="/api")
-app.include_router(api_router)
+app.include_router(api_router, prefix="/api", include_in_schema=False)
+app.include_router(api_router, include_in_schema=False)
+
+
+# Custom OpenAPI specification for Swagger UI & Postman
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        tags=tags_metadata,
+    )
+    if "components" not in openapi_schema:
+        openapi_schema["components"] = {}
+    if "securitySchemes" not in openapi_schema["components"]:
+        openapi_schema["components"]["securitySchemes"] = {}
+
+    openapi_schema["components"]["securitySchemes"]["OAuth2PasswordBearer"] = {
+        "type": "oauth2",
+        "description": "Standard OAuth2 Password Flow. Login with username: 'demotrader' and password: 'demopass'.",
+        "flows": {
+            "password": {
+                "scopes": {},
+                "tokenUrl": f"{settings.API_V1_STR}/auth/login",
+            }
+        },
+    }
+    openapi_schema["components"]["securitySchemes"]["BearerAuth"] = {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter JWT token directly: Bearer <token>",
+    }
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 if __name__ == "__main__":

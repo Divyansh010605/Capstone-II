@@ -252,7 +252,14 @@ const API_ENDPOINTS = [
 
 export const SwaggerDocsPage = () => {
   const { isBackendOnline, token } = useTerminal();
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://localhost';
+  const getBackendUrl = () => {
+    const envUrl = (import.meta.env.VITE_API_URL || '').trim();
+    if (envUrl) {
+      return envUrl.replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');
+    }
+    return 'http://localhost:8000';
+  };
+  const origin = getBackendUrl();
   const apiBaseUrl = `${origin}/api/v1`;
 
   const [activeTab, setActiveTab] = useState('console'); // 'console' | 'embed' | 'schema'
@@ -376,12 +383,12 @@ export const SwaggerDocsPage = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="font-heading font-black text-xl text-[#E9E8DF]">
-              SWAGGER API SPECIFICATION & INTERACTIVE CONSOLE
+              FASTAPI SWAGGER API & OPENAPI SPECIFICATION
             </span>
             <span className="term-badge-accent">OPENAPI 3.1.0</span>
           </div>
           <p className="text-xs text-[#969B91] mt-0.5">
-            Institutional REST Gateway, Schema Contracts, Live Request Sandbox & Bearer Authentication
+            Official Native Swagger UI at <span className="text-[#C7F36B] font-mono">{origin}/docs</span>, ReDoc, and Ready-to-Import Postman Collection.
           </p>
         </div>
 
@@ -391,9 +398,20 @@ export const SwaggerDocsPage = () => {
             href={`${origin}/docs`}
             target="_blank"
             rel="noopener noreferrer"
-            className="term-btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+            className="term-btn-primary text-xs py-2 px-3.5 flex items-center gap-2 font-bold shadow-lg shadow-[#C7F36B]/20"
           >
-            <span>NATIVE SWAGGER UI</span>
+            <span>LAUNCH NATIVE SWAGGER UI</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+
+          <a
+            href={`${origin}/api/v1/export/postman`}
+            target="_blank"
+            rel="noopener noreferrer"
+            download="postman_collection.json"
+            className="term-btn-secondary text-xs py-2 px-3 flex items-center gap-1.5"
+          >
+            <span>POSTMAN COLLECTION</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
 
@@ -401,7 +419,7 @@ export const SwaggerDocsPage = () => {
             href={`${origin}/redoc`}
             target="_blank"
             rel="noopener noreferrer"
-            className="term-btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
+            className="term-btn-ghost text-xs py-2 px-3 flex items-center gap-1.5 border border-[#343B33]"
           >
             <span>REDOC</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -411,11 +429,47 @@ export const SwaggerDocsPage = () => {
             href={`${origin}/openapi.json`}
             target="_blank"
             rel="noopener noreferrer"
-            className="term-btn-ghost text-xs py-1.5 px-2.5 flex items-center gap-1 border border-[#343B33]"
+            className="term-btn-ghost text-xs py-2 px-3 flex items-center gap-1 border border-[#343B33]"
           >
             <Code2 className="w-3.5 h-3.5" />
             <span>SCHEMA (JSON)</span>
           </a>
+        </div>
+      </div>
+
+      {/* 3-Step End-to-End Workflow Guide */}
+      <div className="term-panel p-4 bg-[#141814] border border-[#343B33]">
+        <div className="text-xs font-heading font-bold text-[#C7F36B] uppercase tracking-wider mb-2 flex items-center gap-2">
+          <span>End-to-End Testing Workflow: Swagger → Postman → Web Application</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div className="p-3 bg-[#101310] border border-[#242B24] space-y-1">
+            <div className="font-bold text-[#E9E8DF] flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full bg-[#C7F36B]/20 text-[#C7F36B] text-[10px] flex items-center justify-center font-bold">1</span>
+              <span>Native Swagger UI</span>
+            </div>
+            <p className="text-[11px] text-[#969B91]">
+              Open <a href={`${origin}/docs`} target="_blank" rel="noreferrer" className="text-[#C7F36B] underline font-mono">/docs</a>. Click <strong>Authorize</strong> (top-right). Use Username: <code className="text-[#C7F36B]">demotrader</code>, Password: <code className="text-[#C7F36B]">demopass</code>. Test any of the 9 modules directly with live executions.
+            </p>
+          </div>
+          <div className="p-3 bg-[#101310] border border-[#242B24] space-y-1">
+            <div className="font-bold text-[#E9E8DF] flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full bg-[#77C98B]/20 text-[#77C98B] text-[10px] flex items-center justify-center font-bold">2</span>
+              <span>Postman Collection</span>
+            </div>
+            <p className="text-[11px] text-[#969B91]">
+              Import <code className="text-[#77C98B]">postman_collection.json</code> into Postman. Run <strong>Authentication → Login</strong>. The test script automatically saves the token to <code className="text-[#77C98B]">{`{{token}}`}</code> for all requests.
+            </p>
+          </div>
+          <div className="p-3 bg-[#101310] border border-[#242B24] space-y-1">
+            <div className="font-bold text-[#E9E8DF] flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full bg-[#7C9BF3]/20 text-[#7C9BF3] text-[10px] flex items-center justify-center font-bold">3</span>
+              <span>Web Application</span>
+            </div>
+            <p className="text-[11px] text-[#969B91]">
+              Log in to the web app (<a href="/auth" className="text-[#7C9BF3] underline font-mono">/auth</a>) with the exact same credentials (<code className="text-[#7C9BF3]">demotrader</code> / <code className="text-[#7C9BF3]">demopass</code> or any registered user). Portfolio & watchlist sync instantly.
+            </p>
+          </div>
         </div>
       </div>
 
