@@ -140,6 +140,8 @@ graph TD
 ```text
 Capstone-II/
 ├── Jenkinsfile                  # CI/CD pipeline automation (build, test, deploy)
+├── postman_collection.json      # Complete Postman v2.1.0 collection with auto token capture
+├── postman_environment.json     # Postman local development environment variables
 ├── ai_engine/                   # PyTorch AI Prediction & Feature Engineering
 │   ├── api.py                   # FastAPI microservice entry point (Port 8001)
 │   ├── features/
@@ -189,7 +191,7 @@ Capstone-II/
 │   │   │   ├── prediction_service.py # PredictionService: AI_ENGINE_URL HTTP microservice + in-process fallback
 │   │   │   ├── risk_service.py  # Monte Carlo VaR (10k walks), CVaR, Sharpe, MDD
 │   │   │   └── sentiment_service.py # NLTK VADER augmented with financial lexicon
-│   │   └── main.py              # FastAPI app factory, GZip, CORS, Process-Time middleware
+│   │   └── main.py              # FastAPI app factory, custom OpenAPI, OAuth2/Bearer auth, Postman export
 │   ├── tests/                   # Pytest test suite (comprehensive regression coverage)
 │   │   ├── conftest.py          # TestClient fixture, test user auth header fixture
 │   │   ├── test_ai_engine_verification.py # PyTorch models, ensemble, and predictor tests
@@ -215,6 +217,18 @@ Capstone-II/
     │   │   ├── SentimentViewer.jsx  # Sentiment index gauge, breakdown, news feed
     │   │   ├── StockDashboard.jsx   # Stock dashboard view with error handling & retry UI
     │   │   └── WatchlistModal.jsx   # Watchlist management modal
+    │   ├── pages/
+    │   │   ├── AuthPage.jsx         # Dedicated full-page authentication landing
+    │   │   ├── ModelPerformancePage.jsx # Walk-forward validation & error metric tables
+    │   │   ├── OverviewPage.jsx     # Master trading terminal dashboard view
+    │   │   ├── PortfolioPage.jsx    # Virtual portfolio & position management
+    │   │   ├── PredictionsPage.jsx  # AI forecast horizon exploration
+    │   │   ├── RiskAnalyticsPage.jsx # Tail risk, VaR & Monte Carlo analysis
+    │   │   ├── SentimentPage.jsx    # Real-time financial news NLP sentiment
+    │   │   ├── SettingsPage.jsx     # Terminal configuration & direct Swagger launch
+    │   │   ├── StockExplorerPage.jsx # Monitored equity universe table
+    │   │   ├── SwaggerDocsPage.jsx  # Interactive API console, ReDoc & Postman center
+    │   │   └── WatchlistPage.jsx    # Persistent stock tracking list
     │   ├── services/
     │   │   └── api.js               # Central API client with automatic mock fallbacks
     │   ├── App.jsx                  # Main coordinator managing tabs, auth gate, and logout
@@ -291,6 +305,21 @@ Capstone-II/
 2. **NLP Scoring**: Uses NLTK's `SentimentIntensityAnalyzer` (VADER) augmented with 19 financial domain-specific polarity overrides.
 3. **Aggregation**: Calculates composite compound score (-1.0 to +1.0), positive/neutral/negative percentage breakdown, and maps compound score into a `0-100` **Sentiment Index**.
 
+### G. Native Swagger UI, OpenAPI & Postman Architecture
+1. **Native Swagger (`/docs`) & ReDoc (`/redoc`)**:
+   - Hosted natively by FastAPI at `http://localhost:8000/docs`.
+   - Custom OpenAPI configuration injects both `OAuth2PasswordBearer` (tokenUrl `/api/v1/auth/login`) and direct `BearerAuth`.
+   - Authorize modal accepts `username: demotrader` and `password: demopass` to unlock all protected endpoints.
+   - Route deduplication: Primary router mounted at `/api/v1`; aliases (`/api`, `/`) use `include_in_schema=False` to prevent duplicate OpenAPI clutter.
+   - Pre-populated login schema: `POST /api/v1/auth/login` uses `LOGIN_OPENAPI_EXTRA` with JSON and form examples prefilled with `demotrader` / `demopass`.
+2. **Postman Collection & Environment Export**:
+   - `postman_collection.json` (v2.1.0) and `postman_environment.json` in the root workspace cover all 9 modules.
+   - Automated token capture: `Authentication -> Login` test script automatically stores `access_token` in `{{token}}`.
+   - Export endpoints: `GET /api/v1/export/postman` and `GET /api/v1/export/postman-environment` allow direct download via browser or API.
+3. **Synchronized Credential Store**:
+   - Single source of truth across Swagger, Postman, and the React Web Application (`/auth`).
+   - Default user `demotrader` / `demopass` or any user registered via `POST /api/v1/auth/register` works seamlessly across all 3 interfaces.
+
 ---
 
 ## 4. Key Cross-Cutting Conventions
@@ -312,3 +341,8 @@ Capstone-II/
 6. **Defensive API Data Parsing & Division-by-Zero Protection**:
    - All numeric properties formatted with `.toFixed(2)` or `.toLocaleString()` are wrapped in nullish coalescing checks `Number(val || 0)` or guarded to prevent runtime `TypeError` on pending payloads.
    - Percentage returns in ticker bars, stock strips, and crosshair overlays guard against zero denominators `(prevClose > 0 ? ... : '0.00')`.
+7. **End-to-End Selenium UI Testing & Data-TestID Patterns**:
+   - UI elements throughout the application (such as `search-input`, `navbar-swagger-btn`, `open-auth-btn`, `nav-tab-*`, `quick-ticker-*`) carry explicit `data-testid` attributes.
+   - Headless Chrome tests can be executed reliably via Selenium WebDriver without relying on fragile CSS class name selectors.
+8. **GitIgnore Multi-Tier Policy**:
+   - `.gitignore` strictly protects against repository bloat and credential leaks across Python (`__pycache__`, `venv/`), Node (`node_modules/`, `dist/`), test reports (`reports/`), Selenium (`.wdm/`, driver logs), ML checkpoints, and multi-tier environment files (`.env`, `backend/.env`, `frontend/.env`).

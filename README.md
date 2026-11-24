@@ -157,9 +157,49 @@ An institutional-grade, full-stack quantitative trading analytics and AI forecas
 | `POST` | `/api/v1/watchlist` | Add ticker symbol to watchlist |
 | `DELETE` | `/api/v1/watchlist/{symbol}` | Remove ticker symbol from watchlist |
 | `GET` | `/api/v1/sentiment/{symbol}` | NLP news sentiment score and indexed headline breakdown |
+| `GET` | `/api/v1/export/postman` | Download ready-to-import Postman Collection v2.1.0 with auto-token capture |
+| `GET` | `/api/v1/export/postman-environment` | Download Postman local development environment variables |
 | `GET` | `/health` | Service health status and component diagnostic check |
 
 Interactive OpenAPI documentation is live at **`http://localhost:8000/docs`**.
+
+---
+
+## Native Swagger UI & Postman Integration
+
+The backend provides native OpenAPI 3.1.0 documentation and ready-to-import Postman configurations:
+
+### 1. Native Swagger UI (`/docs`)
+* **URL**: [http://localhost:8000/docs](http://localhost:8000/docs)
+* **ReDoc Console**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+* **Raw Schema**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
+* **Authorize Button**:
+  * Click the green **Authorize** padlock button at the top-right.
+  * Log in with default credentials: **Username**: `demotrader`, **Password**: `demopass`.
+  * Alternatively, enter a JWT access token directly into the **BearerAuth** field.
+  * Once authorized, all 9 module endpoints (Portfolio, Watchlist, User Profile, etc.) will automatically include the `Authorization: Bearer <token>` header.
+* **Pre-Populated Request Bodies**: `POST /api/v1/auth/login` includes pre-filled request examples so "Try it out" and "Execute" work immediately without manual JSON entry.
+
+### 2. Postman Collection & Environment
+* **Collection File**: `postman_collection.json` (Postman Collection v2.1.0 format)
+* **Environment File**: `postman_environment.json` (Includes `baseUrl`, `token`, `symbol`, and demo credentials)
+* **Automated Token Capture**: Running `Authentication -> Login` automatically executes a Postman test script that parses `access_token` and stores it into `{{token}}`:
+  ```javascript
+  var jsonData = pm.response.json();
+  if (jsonData.access_token) {
+      pm.environment.set("token", jsonData.access_token);
+      pm.collectionVariables.set("token", jsonData.access_token);
+  }
+  ```
+* **One-Click Export Endpoints**:
+  * `GET http://localhost:8000/api/v1/export/postman` (Downloads `postman_collection.json`)
+  * `GET http://localhost:8000/api/v1/export/postman-environment` (Downloads `postman_environment.json`)
+
+### 3. Synchronized Credentials Across Interfaces
+The authentication system is synchronized:
+* **Native Swagger UI**: Enter `demotrader` / `demopass` or test `POST /api/v1/auth/register`.
+* **Postman**: Send `Authentication -> Login` with `demotrader` / `demopass`.
+* **Web Application**: Navigate to `http://localhost:5173/auth` and log in with the exact same credentials. Newly registered users created in Swagger or Postman can immediately log in to the web app.
 
 ---
 
@@ -233,6 +273,22 @@ python -m pytest backend/tests -v
 * `backend/tests/test_risk.py` (GBM simulation, VaR/CVaR, Sharpe ratio)
 * `backend/tests/test_ai_engine_verification.py` (PyTorch model loading, tensor compatibility, ensemble calibration)
 * `backend/tests/test_all_endpoints_comprehensive.py` (End-to-end endpoint regression suite)
+
+### End-to-End Selenium UI Testing Architecture
+
+The frontend components provide dedicated `data-testid` attributes (e.g. `data-testid="navbar-swagger-btn"`, `data-testid="search-input"`, `data-testid="open-auth-btn"`) for automated browser testing:
+
+* **Headless Chrome WebDriver**: Driven by `selenium` and `webdriver-manager` to execute browser-level journeys without manual intervention.
+* **Test Coverage**:
+  * **Auth Flows**: Valid and invalid credential logins, registration toggle, password visibility eye icons, and guest exploration.
+  * **Dashboard & Charts**: Candlestick canvas element initialization, symbol search input, tab switching, and ticker tape selection.
+  * **Prediction Horizons**: Forecasting model dropdown switches (`ensemble`, `transformer`, `lstm`, `gru`) and horizon button toggles (`3`, `7`, `14`, `30` days).
+  * **Error & Retry Verification**: Verifies graceful error cards and recovery retry triggers.
+* **Execution**:
+  ```bash
+  # Ensure backend (:8000) and frontend (:5173 or :3000) are running
+  python -m pytest backend/tests/selenium/ -v --tb=short
+  ```
 
 ---
 
