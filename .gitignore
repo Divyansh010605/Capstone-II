@@ -199,3 +199,8 @@ $RECYCLE.BIN/
 .jenkins/
 docker-compose.override.yml
 docker-compose.override.yaml
+
+# Local HTTPS certificates (generate per machine with: mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost 127.0.0.1 ::1)
+certs/*.pem
+certs/*.key
+mkcert.exe
