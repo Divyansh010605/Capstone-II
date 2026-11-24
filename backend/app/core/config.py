@@ -25,6 +25,10 @@ for env_file in _env_candidates:
 
 def _get_cors_origins() -> List[str]:
     default_origins = [
+        "https://localhost",
+        "https://127.0.0.1",
+        "https://localhost:443",
+        "https://127.0.0.1:443",
         "http://localhost",
         "http://localhost:3000",
         "http://localhost:5173",

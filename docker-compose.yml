@@ -39,7 +39,7 @@ services:
       - MONGODB_DB_NAME=stock_market_ai
       - SECRET_KEY=prod-stock-ai-risk-super-secure-jwt-secret-key-32chars-min!
       - AI_ENGINE_URL=http://ai_engine:8001
-      - BACKEND_CORS_ORIGINS=http://localhost,http://localhost:3000,http://localhost:5173,http://localhost:8000,http://localhost:8080
+      - BACKEND_CORS_ORIGINS=https://localhost,https://127.0.0.1,https://localhost:443,https://127.0.0.1:443,http://localhost,http://localhost:3000,http://localhost:5173,http://localhost:8000,http://localhost:8080
     depends_on:
       mongodb:
         condition: service_healthy
@@ -66,12 +66,29 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=http://localhost:8000
+        - VITE_API_URL=https://localhost
     container_name: stock_market_frontend
     restart: always
     ports:
       - "3000:80"
     depends_on:
+      - backend
+    networks:
+      - stock_market_net
+
+  # 5. Nginx Reverse Proxy (HTTPS / SSL Termination)
+  nginx:
+    image: nginx:alpine
+    container_name: stock_market_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
       - backend
     networks:
       - stock_market_net

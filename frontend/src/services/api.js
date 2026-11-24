@@ -4,7 +4,20 @@
  * even if the backend is starting up or temporarily offline.
  */
 
-const RAW_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const getRawApiUrl = () => {
+  const envUrl = (import.meta.env.VITE_API_URL || '').trim();
+  if (typeof window !== 'undefined') {
+    // When served over HTTPS, avoid mixed-content blocking by matching protocol/origin
+    if (window.location.protocol === 'https:') {
+      if (!envUrl || envUrl.startsWith('http://localhost') || envUrl.startsWith('http://127.0.0.1') || envUrl === '/') {
+        return window.location.origin;
+      }
+    }
+  }
+  return envUrl || 'http://localhost:8000';
+};
+
+const RAW_API_URL = getRawApiUrl();
 const API_BASE = RAW_API_URL.replace(/\/+$/, '').endsWith('/api/v1')
   ? RAW_API_URL.replace(/\/+$/, '')
   : `${RAW_API_URL.replace(/\/+$/, '').replace(/\/api\/?$/, '')}/api/v1`;

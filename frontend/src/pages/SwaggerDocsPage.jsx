@@ -252,6 +252,8 @@ const API_ENDPOINTS = [
 
 export const SwaggerDocsPage = () => {
   const { isBackendOnline, token } = useTerminal();
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://localhost';
+  const apiBaseUrl = `${origin}/api/v1`;
 
   const [activeTab, setActiveTab] = useState('console'); // 'console' | 'embed' | 'schema'
   const [selectedEndpoint, setSelectedEndpoint] = useState(API_ENDPOINTS[0].endpoints[0]);
@@ -281,7 +283,7 @@ export const SwaggerDocsPage = () => {
 
     const start = performance.now();
     try {
-      let url = 'http://localhost:8000' + selectedEndpoint.path;
+      let url = origin + selectedEndpoint.path;
 
       // Replace path params
       Object.keys(paramValues).forEach((key) => {
@@ -339,8 +341,8 @@ export const SwaggerDocsPage = () => {
       setResponseStatus('503 Network Error');
       setResponseBody({
         error: 'ConnectionRefused',
-        message: err.message || 'FastAPI service unavailable on http://localhost:8000',
-        hint: 'Ensure uvicorn is running: uvicorn backend.app.main:app --port 8000',
+        message: err.message || `FastAPI service unavailable on ${origin}`,
+        hint: 'Ensure backend service is running or check Docker Compose logs',
       });
     } finally {
       setExecuting(false);
@@ -386,7 +388,7 @@ export const SwaggerDocsPage = () => {
         {/* External Gateway Shortcuts */}
         <div className="flex flex-wrap items-center gap-2">
           <a
-            href="http://localhost:8000/docs"
+            href={`${origin}/docs`}
             target="_blank"
             rel="noopener noreferrer"
             className="term-btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
@@ -396,7 +398,7 @@ export const SwaggerDocsPage = () => {
           </a>
 
           <a
-            href="http://localhost:8000/redoc"
+            href={`${origin}/redoc`}
             target="_blank"
             rel="noopener noreferrer"
             className="term-btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
@@ -406,7 +408,7 @@ export const SwaggerDocsPage = () => {
           </a>
 
           <a
-            href="http://localhost:8000/openapi.json"
+            href={`${origin}/openapi.json`}
             target="_blank"
             rel="noopener noreferrer"
             className="term-btn-ghost text-xs py-1.5 px-2.5 flex items-center gap-1 border border-[#343B33]"
@@ -444,7 +446,7 @@ export const SwaggerDocsPage = () => {
         <div className="ml-auto flex items-center gap-2 text-[11px] text-[#969B91]">
           <span className="flex items-center gap-1">
             <Server className="w-3 h-3 text-[#C7F36B]" />
-            BASE URL: <strong className="text-[#E9E8DF]">http://localhost:8000/api/v1</strong>
+            BASE URL: <strong className="text-[#E9E8DF]">{apiBaseUrl}</strong>
           </span>
         </div>
       </div>
@@ -627,7 +629,7 @@ export const SwaggerDocsPage = () => {
           <div className="term-header">
             <span>FASTAPI NATIVE SWAGGER UI (/docs)</span>
             <a
-              href="http://localhost:8000/docs"
+              href={`${origin}/docs`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[10px] text-[#C7F36B] hover:underline flex items-center gap-1"
@@ -638,7 +640,7 @@ export const SwaggerDocsPage = () => {
           </div>
           <div className="flex-1 bg-white">
             <iframe
-              src="http://localhost:8000/docs"
+              src={`${origin}/docs`}
               title="Swagger UI"
               className="w-full h-full border-none"
             />

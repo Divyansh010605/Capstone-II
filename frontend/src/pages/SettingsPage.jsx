@@ -105,7 +105,9 @@ export const SettingsPage = () => {
           <div className="flex items-center justify-between p-3 bg-[#121512] border border-[#242B24]">
             <div>
               <span className="font-bold text-[#E9E8DF] block">FASTAPI BACKEND GATEWAY</span>
-              <span className="text-[10px] text-[#969B91]">http://localhost:8000/api/v1</span>
+              <span className="text-[10px] text-[#969B91]">
+                {typeof window !== 'undefined' ? `${window.location.origin}/api/v1` : 'https://localhost/api/v1'}
+              </span>
             </div>
             <span
               className={`px-2.5 py-1 text-[11px] font-bold border ${
