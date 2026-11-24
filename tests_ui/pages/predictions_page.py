@@ -14,4 +14,9 @@ class PredictionsPagePOM(BasePage):
         self.safe_click(locator)
 
     def trigger_inference(self):
-        self.safe_click(self.REFRESH_BTN)
+        try:
+            self.wait_for_clickable(self.REFRESH_BTN, timeout=10)
+            self.safe_click(self.REFRESH_BTN)
+        except Exception:
+            el = self.wait_for_presence(self.REFRESH_BTN)
+            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'}); arguments[0].click();", el)

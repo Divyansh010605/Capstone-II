@@ -40,6 +40,9 @@ class BasePage:
         el = self.wait_for_visible(locator, timeout)
         self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", el)
         if clear:
+            from selenium.webdriver.common.keys import Keys
+            el.send_keys(Keys.CONTROL + "a")
+            el.send_keys(Keys.BACKSPACE)
             el.clear()
         el.send_keys(text)
 
