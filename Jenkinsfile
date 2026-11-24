@@ -38,10 +38,21 @@ pipeline {
                 checkout scm
 
                 script {
-                    env.GIT_COMMIT_ID = sh(
-                        script: 'git rev-parse --short HEAD',
-                        returnStdout: true
-                    ).trim()
+                    try {
+                        if (isUnix()) {
+                            env.GIT_COMMIT_ID = sh(
+                                script: 'git rev-parse --short HEAD',
+                                returnStdout: true
+                            ).trim()
+                        } else {
+                            env.GIT_COMMIT_ID = bat(
+                                script: '@git rev-parse --short HEAD',
+                                returnStdout: true
+                            ).trim()
+                        }
+                    } catch (Exception e) {
+                        env.GIT_COMMIT_ID = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'latest'
+                    }
                 }
 
                 echo "Building commit: ${env.GIT_COMMIT_ID}"
