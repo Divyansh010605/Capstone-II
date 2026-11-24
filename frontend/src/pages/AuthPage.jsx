@@ -62,7 +62,6 @@ export const AuthPage = () => {
   const [password, setPassword] = useState('demopass');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  const [devOtpHint, setDevOtpHint] = useState('');
   const [oauthConfig, setOauthConfig] = useState({ google_client_id: '', github_client_id: '' });
 
   // UI state
@@ -158,7 +157,6 @@ export const AuthPage = () => {
         navigate('/overview');
       } else if (authMode === 'forgot_request') {
         const res = await apiClient.forgotPassword(email);
-        setDevOtpHint(res.dev_otp || '');
         setSuccessMsg(res.message || 'Verification code dispatched to your email.');
         setAuthMode('forgot_reset');
       } else if (authMode === 'forgot_reset') {
@@ -178,12 +176,31 @@ export const AuthPage = () => {
 
   const handleOAuth = async (provider) => {
     clearMessages();
+    setLoading(true);
 
-    // 1. Live Google OAuth Redirect with Account Chooser
-    if (provider === 'google') {
-      const clientId = oauthConfig.google_client_id;
-      if (clientId) {
-        const redirectUri = `${window.location.origin}/auth`;
+    try {
+      // 1. Resolve Client ID from state, env, or dynamic backend config
+      let config = oauthConfig;
+      if (!config.google_client_id || !config.github_client_id) {
+        try {
+          const fetched = await apiClient.getOAuthConfig();
+          if (fetched) {
+            config = fetched;
+            setOauthConfig(fetched);
+          }
+        } catch {
+          // ignore network failure
+        }
+      }
+
+      const redirectUri = `${window.location.origin}/auth`;
+
+      // 2. Real Google OAuth Redirect with Account Chooser
+      if (provider === 'google') {
+        const clientId = config.google_client_id || import.meta.env.VITE_GOOGLE_CLIENT_ID || '678374750272-mbp6p8b2b6ms0vkhm7d77bbpudpo69iv.apps.googleusercontent.com';
+        if (!clientId) {
+          throw new Error('Google Client ID is not configured in .env');
+        }
         const googleAuthUrl =
           `https://accounts.google.com/o/oauth2/v2/auth?` +
           `client_id=${encodeURIComponent(clientId)}&` +
@@ -194,13 +211,13 @@ export const AuthPage = () => {
         window.location.href = googleAuthUrl;
         return;
       }
-    }
 
-    // 2. Live GitHub OAuth Redirect
-    if (provider === 'github') {
-      const clientId = oauthConfig.github_client_id;
-      if (clientId) {
-        const redirectUri = `${window.location.origin}/auth`;
+      // 3. Real GitHub OAuth Redirect
+      if (provider === 'github') {
+        const clientId = config.github_client_id || import.meta.env.VITE_GITHUB_CLIENT_ID || 'Ov23litZ1GmTRAVlTP7k';
+        if (!clientId) {
+          throw new Error('GitHub Client ID is not configured in .env');
+        }
         const githubAuthUrl =
           `https://github.com/login/oauth/authorize?` +
           `client_id=${encodeURIComponent(clientId)}&` +
@@ -209,32 +226,8 @@ export const AuthPage = () => {
         window.location.href = githubAuthUrl;
         return;
       }
-    }
-
-    // 3. Fallback mock dev login if Client IDs are not yet registered
-    setLoading(true);
-    try {
-      if (oauthLogin) {
-        await oauthLogin(provider, {
-          email: `${provider}_user@institutional.quant`,
-          username: `${provider}_quant`,
-          name: `${provider.toUpperCase()} Researcher`,
-        });
-      } else {
-        const res = await apiClient.oauthLogin(provider, {
-          email: `${provider}_user@institutional.quant`,
-          username: `${provider}_quant`,
-          name: `${provider.toUpperCase()} Researcher`,
-        });
-        if (res.access_token) {
-          localStorage.setItem('alpha_jwt_token', res.access_token);
-          apiClient.setToken(res.access_token);
-        }
-      }
-      navigate('/overview');
     } catch (err) {
-      setErrorMsg(err.message || `${provider} OAuth rejected`);
-    } finally {
+      setErrorMsg(err.message || `${provider} OAuth initialization failed.`);
       setLoading(false);
     }
   };
@@ -281,12 +274,6 @@ export const AuthPage = () => {
             <div className="p-2.5 bg-[#77C98B]/15 border border-[#77C98B] text-[#77C98B] text-xs flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{successMsg}</span>
-            </div>
-          )}
-
-          {devOtpHint && (
-            <div className="p-2 bg-[#C7F36B]/10 border border-[#C7F36B] text-[#C7F36B] text-[11px]">
-              DEV OTP HINT: <strong>{devOtpHint}</strong> (Enter in OTP field below)
             </div>
           )}
 

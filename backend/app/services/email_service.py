@@ -102,12 +102,25 @@ class EmailOTPService:
                 msg.attach(MIMEText(text_content, "plain"))
                 msg.attach(MIMEText(html_content, "html"))
 
-                with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=10) as server:
-                    server.starttls()
-                    server.login(self.smtp_user, self.smtp_password)
-                    server.send_message(msg)
-                email_sent = True
-                logger.info(f"OTP email sent successfully via SMTP to {normalized_email}")
+                # Try primary port, fallback to port 2525 or 587 if network blocks the connection
+                ports_to_try = [self.smtp_port]
+                for alt in (2525, 587):
+                    if alt not in ports_to_try:
+                        ports_to_try.append(alt)
+
+                for port in ports_to_try:
+                    try:
+                        with smtplib.SMTP(self.smtp_host, port, timeout=10) as server:
+                            server.ehlo()
+                            server.starttls()
+                            server.ehlo()
+                            server.login(self.smtp_user, self.smtp_password)
+                            server.send_message(msg)
+                        email_sent = True
+                        logger.info(f"OTP email sent successfully via SMTP (port {port}) to {normalized_email}")
+                        break
+                    except Exception as port_err:
+                        logger.warning(f"SMTP send attempt on port {port} failed: {port_err}")
             except Exception as ex:
                 logger.error(f"Failed to send email via SMTP to {normalized_email}: {ex}")
 
@@ -130,9 +143,8 @@ class EmailOTPService:
             flush=True,
         )
 
-        # Return dev_otp if SMTP is not active so user can test immediately in UI
-        dev_otp_val = None if email_sent else otp
-        return True, "Verification code sent to email successfully.", dev_otp_val
+        # Do not expose OTP to client/UI; delivery is strictly via email
+        return True, "Verification code sent to email successfully.", None
 
     async def verify_otp(self, email: str, entered_otp: str, db=None) -> Tuple[bool, str]:
         """Verify the entered OTP against in-memory cache and MongoDB."""

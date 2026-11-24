@@ -181,11 +181,11 @@ async def forgot_password(req: ForgotPasswordRequest, db=Depends(get_database)):
             detail="No registered user found with this email address.",
         )
 
-    success, message, dev_otp = await email_otp_service.create_and_send_otp(email_val, db=db)
+    success, message, _ = await email_otp_service.create_and_send_otp(email_val, db=db)
     return MessageResponse(
         message="A 6-digit verification code has been sent to your email.",
         success=True,
-        dev_otp=dev_otp,
+        dev_otp=None,
     )
 
 

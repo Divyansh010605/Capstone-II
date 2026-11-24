@@ -266,19 +266,6 @@ export const AuthModal = ({
           </div>
         )}
 
-        {devOtpHint && modalMode === 'forgot_reset' && (
-          <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono flex items-center justify-between">
-            <span>Dev OTP: <strong className="text-white">{devOtpHint}</strong></span>
-            <button
-              type="button"
-              onClick={() => setOtpCode(devOtpHint)}
-              className="text-[11px] underline text-cyan-300 font-bold"
-            >
-              Auto-Fill
-            </button>
-          </div>
-        )}
-
         {/* ── LOGGED IN VIEW ── */}
         {user ? (
           <div className="space-y-4 pt-1">

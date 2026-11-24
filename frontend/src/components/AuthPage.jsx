@@ -339,23 +339,6 @@ export const AuthPage = ({ onLoginSuccess, onExploreGuest }) => {
             </div>
           )}
 
-          {/* Dev OTP Helper Banner */}
-          {devOtpHint && authMode === 'forgot_reset' && (
-            <div className="mb-5 p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-mono flex items-center justify-between gap-2 animate-fadeIn">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-cyan-400" />
-                <span>Dev OTP: <strong className="text-white tracking-widest">{devOtpHint}</strong></span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setOtpCode(devOtpHint)}
-                className="px-2 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 rounded text-[11px] font-bold text-cyan-300 border border-cyan-500/30 transition-colors"
-              >
-                Auto-Fill
-              </button>
-            </div>
-          )}
-
           {/* ══════════════ 1. LOGIN FORM ══════════════ */}
           {authMode === 'login' && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
