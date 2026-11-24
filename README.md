@@ -211,12 +211,20 @@ The authentication system is synchronized:
    ```bash
    cp .env.example .env
    ```
-2. Build and launch all microservices:
+2. Generate trusted local HTTPS certificates (required by the Nginx proxy; certs are git-ignored, so every machine creates its own). Install [mkcert](https://github.com/FiloSottile/mkcert) (`winget install FiloSottile.mkcert` on Windows), then:
    ```bash
-   docker compose up --build
+   mkcert -install
+   mkdir certs
+   mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost 127.0.0.1 ::1
    ```
-3. Access services:
-   * **Frontend Terminal**: `http://localhost:3000`
+   Restart your browser afterwards. Skipping `-install` (or using a cert made on another machine) shows a "Not secure" warning.
+3. Build and launch all microservices:
+   ```bash
+   docker compose up -d --build
+   ```
+4. Access services:
+   * **Secure App (HTTPS via Nginx)**: `https://localhost` (`http://localhost` redirects here)
+   * **Frontend Terminal (direct)**: `http://localhost:3000`
    * **FastAPI Backend & Docs**: `http://localhost:8000/docs`
    * **AI Engine Microservice**: `http://localhost:8001/health`
    * **MongoDB**: `localhost:27017`
@@ -295,13 +303,16 @@ The frontend components provide dedicated `data-testid` attributes (e.g. `data-t
 ## Jenkins CI/CD Automation
 
 The repository includes a production-grade [Jenkinsfile](Jenkinsfile) configured for automated continuous integration:
-* **Triggering**: Configured with `pollSCM('* * * * *')` to automatically trigger builds on every new Git commit.
-* **Cross-Platform Compatibility**: Automatically detects Unix vs Windows environments and sets explicit user environment paths for Python, pytest, Node.js, and Docker.
+* **Triggering**: `githubPush()` (instant, needs a public webhook URL such as ngrok) plus `pollSCM('H/2 * * * *')` as a fallback for localhost Jenkins. Run one build manually after changing the Jenkinsfile so Jenkins registers the triggers; the job must be "Pipeline script from SCM" on `master`.
+* **Cross-Platform Compatibility**: Detects Unix vs Windows. On Windows every `bat` command ends with `|| exit /b 1` (Jenkins only checks the last command's exit code) and `npm` is started with `call` (otherwise the batch script ends after it).
 * **Pipeline Stages**:
   1. **Checkout**: Clones the latest commit from SCM.
-  2. **Backend Dependencies & Test**: Executes automated pytest suite with zero warnings.
-  3. **Frontend Build**: Verifies dependencies and compiles production Vite assets.
-  4. **Docker Images Build**: Builds production container images for deployment.
+  2. **Environment Verification**: Checks Python, Node.js, and Docker are available.
+  3. **Backend Dependencies & Tests**: Installs requirements and runs pytest, publishing the JUnit report even on failure.
+  4. **Frontend Install & Build**: `npm ci` and the production Vite build.
+  5. **Docker Compose Validation**: Creates `.env` from `.env.example` if missing (it is git-ignored), checks the Docker daemon, then runs `docker compose config`.
+  6. **Docker Images Build**: Builds production container images.
+* **Note**: The pipeline does not start the containers or test HTTPS; local HTTPS certificates are not available in CI.
 
 ---
 

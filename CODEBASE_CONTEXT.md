@@ -139,7 +139,9 @@ graph TD
 
 ```text
 Capstone-II/
-├── Jenkinsfile                  # CI/CD pipeline automation (build, test, deploy)
+├── Jenkinsfile                  # CI/CD pipeline (githubPush + pollSCM, test, frontend build, Docker build)
+├── nginx/nginx.conf             # HTTPS reverse proxy: 80 -> 443 redirect, /api,/docs,/health -> backend, / -> frontend
+├── certs/                       # Local mkcert TLS certs (localhost.pem, localhost-key.pem) - git-ignored, generate per machine
 ├── postman_collection.json      # Complete Postman v2.1.0 collection with auto token capture
 ├── postman_environment.json     # Postman local development environment variables
 ├── ai_engine/                   # PyTorch AI Prediction & Feature Engineering
@@ -327,7 +329,11 @@ Capstone-II/
 1. **Date/Time Handling**:
    - All server timestamps use timezone-aware UTC: `datetime.now(timezone.utc).isoformat()`.
    - Deprecated Python functions (`utcnow()`, `utcfromtimestamp()`) are strictly avoided.
-2. **CORS & Frontend Ports**:
+2. **Local HTTPS (Nginx + mkcert)**:
+   - Nginx terminates TLS on 443 using `certs/localhost.pem` / `localhost-key.pem` and redirects port 80 to HTTPS. The frontend is built with `VITE_API_URL=https://localhost`.
+   - The certs are git-ignored and must be created per machine with `mkcert -install` then `mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost 127.0.0.1 ::1`. A cert issued by another machine's CA shows "Not secure". `docker compose up` fails without them.
+   - Jenkins/Selenium agents do not trust the local CA; CI only validates and builds images, it does not serve HTTPS.
+2a. **CORS & Frontend Ports**:
    - [`config.py`](backend/app/core/config.py) provides origins for React (`3000`), Vite (`5173`), and backend documentation (`8000`).
    - Uses `allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$"` so arbitrary local dev ports work with `allow_credentials=True`.
 3. **Resilience & Fallbacks**:
