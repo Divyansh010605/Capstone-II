@@ -96,8 +96,10 @@ def test_forgot_password_and_reset_flow(client):
     assert fp_resp.status_code == status.HTTP_200_OK
     fp_data = fp_resp.json()
     assert fp_data["success"] is True
-    otp = fp_data.get("dev_otp")
-    assert otp is not None
+    # The API intentionally never exposes the OTP (it is emailed), so read it from the service cache
+    from backend.app.services.email_service import _otp_cache
+    otp = _otp_cache[test_email.lower()]["otp"]
+    assert fp_data.get("dev_otp") is None
     assert len(otp) == 6
 
     # 4. Verify invalid OTP

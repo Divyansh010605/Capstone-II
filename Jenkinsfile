@@ -1,27 +1,43 @@
+// Capstone-II CI pipeline (Windows Jenkins agent, Linux also supported)
+//
+// Key rules for Windows `bat` steps (the cause of most earlier failures):
+//   * Jenkins only reports the exit code of the LAST command in a bat script,
+//     so every command is followed by `|| exit /b 1`.
+//   * npm / npx are .cmd files: they must be started with `call`, otherwise the
+//     batch script silently ends right after them.
+//   * No `a && b || c` fallbacks: `c` also runs when `b` fails (e.g. tests run twice).
+
+def run(String cmd) {
+    if (isUnix()) {
+        sh "set -e\n${cmd}"
+    } else {
+        bat "@echo off\r\n${cmd}"
+    }
+}
 
 pipeline {
     agent any
 
-    // GitHub Webhook Trigger
     triggers {
+        // Instant build when a GitHub webhook reaches Jenkins (needs a public URL)
         githubPush()
+        // Fallback: Jenkins checks GitHub itself every ~2 minutes (works on localhost)
+        pollSCM('H/2 * * * *')
     }
 
-    // Pipeline Configuration
     options {
         timestamps()
-        timeout(time: 45, unit: 'MINUTES')
+        timeout(time: 60, unit: 'MINUTES')
         disableConcurrentBuilds()
-        buildDiscarder(logRotator(
-            numToKeepStr: '10',
-            artifactNumToKeepStr: '5'
-        ))
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
+        // checkout is done explicitly in the first stage
         skipDefaultCheckout(true)
     }
 
     environment {
-        PYTHONPATH = "${WORKSPACE}"
         CI = 'true'
+        PYTHONUNBUFFERED = '1'
+        PYTHONIOENCODING = 'utf-8'
         PIP_DISABLE_PIP_VERSION_CHECK = '1'
         PIP_NO_INPUT = '1'
         PATH = "C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\nodejs;C:\\Program Files\\Docker\\Docker\\resources\\bin;${env.PATH}"
@@ -29,310 +45,145 @@ pipeline {
 
     stages {
 
-        // -----------------------------------------
-        // STAGE 1: CHECKOUT
-        // -----------------------------------------
         stage('Source Code Checkout') {
             steps {
-                echo 'Checking out Capstone-II repository...'
-
                 checkout scm
-
                 script {
                     try {
-                        if (isUnix()) {
-                            env.GIT_COMMIT_ID = sh(
-                                script: 'git rev-parse --short HEAD',
-                                returnStdout: true
-                            ).trim()
-                        } else {
-                            env.GIT_COMMIT_ID = bat(
-                                script: '@git rev-parse --short HEAD',
-                                returnStdout: true
-                            ).trim()
-                        }
+                        env.GIT_COMMIT_ID = isUnix()
+                            ? sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                            : bat(script: '@git rev-parse --short HEAD', returnStdout: true).trim()
                     } catch (Exception e) {
                         env.GIT_COMMIT_ID = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'latest'
                     }
                 }
-
                 echo "Building commit: ${env.GIT_COMMIT_ID}"
             }
         }
 
-        // -----------------------------------------
-        // STAGE 2: ENVIRONMENT CHECK
-        // -----------------------------------------
         stage('Environment Verification') {
             steps {
-                echo 'Checking installed development tools...'
-
                 script {
                     if (isUnix()) {
-                        sh '''
-                            set -e
-                            python3 --version
-                            pip3 --version
-                            node --version
-                            npm --version
-                            docker --version
-                            docker compose version
-                        '''
+                        run('python3 --version\npip3 --version\nnode --version\nnpm --version\ndocker --version\ndocker compose version')
                     } else {
-                        bat '''
-                            @echo off
-                            set "PATH=C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\nodejs;C:\\Program Files\\Docker\\Docker\\resources\\bin;%PATH%"
-                            where python >nul 2>&1 && python --version || py --version
-                            where pip >nul 2>&1 && pip --version || py -m pip --version
-                            node --version
-                            npm --version
-                            docker --version
-                            docker compose version
-
-                            if errorlevel 1 exit /b 1
-                        '''
+                        run('''python --version || exit /b 1
+python -m pip --version || exit /b 1
+call node --version || exit /b 1
+call npm --version || exit /b 1
+docker --version || exit /b 1
+docker compose version || exit /b 1''')
                     }
                 }
             }
         }
 
-        // -----------------------------------------
-        // STAGE 3: BACKEND DEPENDENCIES
-        // -----------------------------------------
         stage('Backend Dependency Installation') {
             steps {
-                echo 'Installing Python backend dependencies...'
-
                 script {
                     if (isUnix()) {
-                        sh '''
-                            set -e
-                            python3 -m pip install \
-                                -r backend/requirements.txt
-                        '''
+                        run('python3 -m pip install -r backend/requirements.txt')
                     } else {
-                        bat '''
-                            @echo off
-                            set "PATH=C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\nodejs;C:\\Program Files\\Docker\\Docker\\resources\\bin;%PATH%"
-                            where python >nul 2>&1 && (
-                                python -m pip install -r backend\\requirements.txt
-                            ) || (
-                                py -m pip install -r backend\\requirements.txt
-                            )
-                            if errorlevel 1 exit /b 1
-                        '''
+                        run('python -m pip install -r backend\\requirements.txt || exit /b 1')
                     }
                 }
             }
         }
 
-        // -----------------------------------------
-        // STAGE 4: BACKEND TESTING
-        // -----------------------------------------
         stage('Backend Unit & Integration Tests') {
             steps {
-                echo 'Executing backend test suite...'
-
                 script {
                     if (isUnix()) {
-                        sh '''
-                            set -e
-                            mkdir -p reports
-
-                            python3 -m pytest backend/tests \
-                                -v \
-                                --tb=short \
-                                --junitxml=reports/backend-results.xml
-                        '''
+                        run('mkdir -p reports\npython3 -m pytest backend/tests -v --tb=short --junitxml=reports/backend-results.xml')
                     } else {
-                        bat '''
-                            @echo off
-                            set "PATH=C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\divyansh\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;C:\\Program Files\\nodejs;C:\\Program Files\\Docker\\Docker\\resources\\bin;%PATH%"
-                            if not exist reports mkdir reports
-
-                            where python >nul 2>&1 && (
-                                python -m pytest backend\\tests ^
-                                    -v ^
-                                    --tb=short ^
-                                    --junitxml=reports\\backend-results.xml
-                            ) || (
-                                py -m pytest backend\\tests ^
-                                    -v ^
-                                    --tb=short ^
-                                    --junitxml=reports\\backend-results.xml
-                            )
-
-                            if errorlevel 1 exit /b 1
-                        '''
+                        run('''if not exist reports mkdir reports
+python -m pytest backend\\tests -v --tb=short --junitxml=reports\\backend-results.xml || exit /b 1''')
                     }
+                }
+            }
+            post {
+                always {
+                    junit testResults: 'reports/backend-results.xml', allowEmptyResults: true
                 }
             }
         }
 
-        // -----------------------------------------
-        // STAGE 5: FRONTEND DEPENDENCIES
-        // -----------------------------------------
         stage('Frontend Dependency Installation') {
             steps {
-                echo 'Installing React and Vite dependencies...'
-
                 dir('frontend') {
                     script {
                         if (isUnix()) {
-                            sh '''
-                                set -e
-                                npm install --no-audit --no-fund
-                            '''
+                            run('npm ci --no-audit --no-fund')
                         } else {
-                            bat '''
-                                @echo off
-                                set "PATH=C:\\Program Files\\nodejs;%PATH%"
-                                call npm install --no-audit --no-fund
-                                if errorlevel 1 exit /b 1
-                            '''
+                            run('call npm ci --no-audit --no-fund || exit /b 1')
                         }
                     }
                 }
             }
         }
 
-        // -----------------------------------------
-        // STAGE 6: FRONTEND BUILD
-        // -----------------------------------------
         stage('Frontend Production Build') {
             steps {
-                echo 'Creating optimized React production build...'
-
                 dir('frontend') {
                     script {
                         if (isUnix()) {
-                            sh 'npm run build'
+                            run('npm run build')
                         } else {
-                            bat '''
-                                @echo off
-                                set "PATH=C:\\Program Files\\nodejs;%PATH%"
-                                call npm run build
-                                if errorlevel 1 exit /b 1
-                            '''
+                            run('call npm run build || exit /b 1')
                         }
                     }
                 }
-
-                echo 'Frontend build completed.'
             }
         }
 
-        // -----------------------------------------
-        // STAGE 7: DOCKER VALIDATION
-        // -----------------------------------------
         stage('Docker Compose Validation') {
             steps {
-                echo 'Validating Docker Compose configuration...'
-
                 script {
+                    // docker-compose.yml needs .env (env_file) but .env is git-ignored,
+                    // so it never exists in a fresh Jenkins workspace. Create it from the template.
                     if (isUnix()) {
-                        sh 'docker compose config -q'
+                        run('[ -f .env ] || cp .env.example .env\ndocker info > /dev/null\ndocker compose config -q')
                     } else {
-                        bat '''
-                            @echo off
-                            docker compose config -q
-                            if errorlevel 1 exit /b 1
-                        '''
+                        run('''if not exist .env copy /Y .env.example .env >nul
+docker info >nul 2>&1 || (echo Docker daemon is not running - start Docker Desktop & exit /b 1)
+docker compose config -q || exit /b 1''')
                     }
                 }
             }
         }
 
-        // -----------------------------------------
-        // STAGE 8: DOCKER IMAGE BUILD
-        // -----------------------------------------
         stage('Docker Image Build') {
             steps {
-                echo 'Building application Docker images...'
-
                 script {
                     if (isUnix()) {
-                        sh '''
-                            set -e
-                            docker compose build
-                        '''
+                        run('docker compose build')
                     } else {
-                        bat '''
-                            @echo off
-                            docker compose build
-                            if errorlevel 1 exit /b 1
-                        '''
+                        run('docker compose build || exit /b 1')
                     }
                 }
             }
         }
 
-        // -----------------------------------------
-        // STAGE 9: BUILD SUMMARY
-        // -----------------------------------------
         stage('Build Verification') {
             steps {
-                echo 'All pipeline stages completed successfully.'
-
-                script {
-                    echo "Repository: Capstone-II"
-                    echo "Commit: ${env.GIT_COMMIT_ID}"
-                    echo "Build Number: ${env.BUILD_NUMBER}"
-                    echo "Build URL: ${env.BUILD_URL}"
-                }
+                echo "Repository: Capstone-II | Commit: ${env.GIT_COMMIT_ID} | Build: #${env.BUILD_NUMBER}"
+                echo "Build URL: ${env.BUILD_URL}"
             }
         }
     }
 
-    // -----------------------------------------
-    // POST BUILD ACTIONS
-    // -----------------------------------------
     post {
-
         always {
-            echo 'Jenkins pipeline execution finished.'
-
-            junit(
-                testResults: 'reports/backend-results.xml',
-                allowEmptyResults: true
-            )
-
-            archiveArtifacts(
-                artifacts: 'frontend/dist/**',
-                allowEmptyArchive: true
-            )
+            archiveArtifacts artifacts: 'frontend/dist/**', allowEmptyArchive: true
         }
-
         success {
-            echo '''
-            =====================================
-                  CAPSTONE-II BUILD SUCCESS
-            =====================================
-            Backend Tests       : PASSED
-            Frontend Build      : PASSED
-            Docker Validation   : PASSED
-            Docker Image Build  : PASSED
-            =====================================
-            '''
+            echo 'CAPSTONE-II BUILD SUCCESS'
         }
-
         failure {
-            echo '''
-            =====================================
-                  CAPSTONE-II BUILD FAILED
-            =====================================
-            Please inspect the Jenkins console
-            output and identify the failed stage.
-            =====================================
-            '''
+            echo 'CAPSTONE-II BUILD FAILED - check the failed stage in the console output.'
         }
-
         aborted {
             echo 'Pipeline execution was aborted.'
-        }
-
-        cleanup {
-            echo 'Pipeline cleanup completed.'
         }
     }
 }
